@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+.coverage
+.coverage.*
+.env
+.venv
+venv/
+
+# Outputs generados
+/tmp/
+*.docx
+!Propuesta_*.docx.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Logs
+*.log
+
+# n8n workflows (no se suben al repo del microservicio)
+*_workflow_n8n*.json
