@@ -1,303 +1,281 @@
 """
-zebra_api.py
-
-Microservicio HTTP que expone el zebra_proposal_builder como API REST.
-Pensado para ser consumido desde n8n (HTTP Request node) o desde un
-dashboard custom.
+zebra_api.py — Microservicio FastAPI para generación de propuestas Zebra.
 
 Endpoints:
-    POST /generate        → recibe proposal_data JSON, devuelve DOCX binario
-    POST /generate/base64 → igual que /generate pero devuelve base64 (útil
-                            cuando el cliente prefiere JSON-in-JSON-out)
-    GET  /health          → healthcheck
+  - GET  /health           → healthcheck
+  - POST /generate         → recibe proposal_data, devuelve DOCX
+  - POST /generate-excel   → recibe proposal_data con calculadora_inputs, devuelve XLSX anexo
 
-Run (dev):
-    uvicorn zebra_api:app --host 0.0.0.0 --port 8080 --reload
+Autenticación: header X-API-Key debe coincidir con env var ZEBRA_API_KEY.
 
-Run (prod):
-    uvicorn zebra_api:app --host 0.0.0.0 --port 8080 --workers 2
+Lógica de la calculadora:
+  Si el body trae `calculadora_inputs`, el API calcula `calculadora_inversion`
+  y `plan_12_meses` internamente usando `zebra_investment_calc`, los inyecta
+  en `proposal_data`, y deja al builder hacer su trabajo. Claude (en n8n) NO
+  hace estos cálculos — solo envía los datos crudos.
 """
 
-from __future__ import annotations
-
-import base64
+import logging
 import os
-import tempfile
+import re
+import unicodedata
 import uuid
-from typing import Any
+from dataclasses import asdict, is_dataclass
+from pathlib import Path
+from typing import Any, Dict, Optional
 
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
-from pydantic import BaseModel
 
 from zebra_proposal_builder import generate_proposal
+from zebra_investment_calc import (
+    CalculadoraInversionInput,
+    PlanInversionInput,
+    calcular_inversion,
+    calcular_plan_12_meses,
+)
+from zebra_excel_annex import generate_investment_excel
 
 
-# ---------------------------------------------------------------------------
-# Configuración
-# ---------------------------------------------------------------------------
+# =============================================================================
+# CONFIG
+# =============================================================================
 
-# Carpeta de archivos generados. Por defecto /tmp/zebra; se puede sobreescribir
-# con la variable de entorno ZEBRA_OUTPUT_DIR.
-OUTPUT_DIR = os.environ.get("ZEBRA_OUTPUT_DIR", "/tmp/zebra")
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-# API key opcional. Si ZEBRA_API_KEY está seteada, todas las requests
-# deben traer el header X-API-Key con ese valor.
+API_VERSION = "2.0.0"
+OUTPUT_DIR = Path(os.environ.get("ZEBRA_OUTPUT_DIR", "/tmp/zebra"))
 API_KEY = os.environ.get("ZEBRA_API_KEY")
 
-# Campos mínimos que deben estar en proposal_data
-REQUIRED_FIELDS = [
-    "cliente", "modelo", "objetivo",
-    "contexto", "diagnostico", "cambio_paradigma",
-    "sistema_propuesto", "arquitectura",
-    "plan_implementacion", "metas", "inversion", "por_que_zebra",
-]
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
+log = logging.getLogger("zebra-api")
 
 
 app = FastAPI(
     title="Zebra Proposal API",
-    description="Genera propuestas estratégicas en DOCX desde JSON estructurado.",
-    version="1.0.0",
+    version=API_VERSION,
+    description="Microservicio para generar propuestas DOCX y anexos Excel de Zebra.",
 )
 
 
-# ---------------------------------------------------------------------------
-# Utilidades
-# ---------------------------------------------------------------------------
+# =============================================================================
+# UTILS
+# =============================================================================
 
-def _check_auth(request: Request) -> None:
-    """Valida API key si está configurada."""
-    if not API_KEY:
-        return
-    key = request.headers.get("x-api-key")
-    if key != API_KEY:
-        raise HTTPException(status_code=401, detail="API key inválida o faltante.")
+def _check_auth(x_api_key: Optional[str]):
+    """Compara el header X-API-Key con la env var. Si no hay env var, no autentica."""
+    if API_KEY and x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid or missing X-API-Key")
 
 
-def _validate_schema(data: Any) -> list[str]:
-    """Retorna una lista de errores de validación (vacía si es válido)."""
-    errors: list[str] = []
-    if not isinstance(data, dict):
-        return ["proposal_data debe ser un objeto JSON (dict)."]
-
-    for field in REQUIRED_FIELDS:
-        if field not in data:
-            errors.append(f"Campo obligatorio faltante: '{field}'.")
-
-    diag = data.get("diagnostico")
-    if isinstance(diag, list) and not (3 <= len(diag) <= 4):
-        errors.append(
-            f"'diagnostico' debe tener entre 3 y 4 items (tiene {len(diag)})."
-        )
-
-    modelos = data.get("sistema_propuesto", {}).get("modelos") if isinstance(data.get("sistema_propuesto"), dict) else None
-    if isinstance(modelos, list) and not (2 <= len(modelos) <= 4):
-        errors.append(
-            f"'sistema_propuesto.modelos' debe tener entre 2 y 4 items "
-            f"(tiene {len(modelos)})."
-        )
-
-    fases = data.get("plan_implementacion")
-    if isinstance(fases, list) and len(fases) != 4:
-        errors.append(
-            f"'plan_implementacion' debe tener exactamente 4 fases "
-            f"(tiene {len(fases)})."
-        )
-
-    kpis = data.get("metas", {}).get("kpis") if isinstance(data.get("metas"), dict) else None
-    if isinstance(kpis, list) and len(kpis) != 3:
-        errors.append(
-            f"'metas.kpis' debe tener exactamente 3 items (tiene {len(kpis)})."
-        )
-
-    return errors
+def _slugify(text: str) -> str:
+    """Convierte un string a un slug seguro para nombres de archivo."""
+    if not text:
+        return "propuesta"
+    # Normaliza acentos
+    text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode("ascii")
+    text = re.sub(r"[^a-zA-Z0-9]+", "_", text).strip("_").lower()
+    return text or "propuesta"
 
 
-def _build_docx(proposal_data: dict, slug: str | None = None) -> str:
-    """Genera el DOCX y retorna el path absoluto."""
-    slug = slug or "propuesta"
-    # Limpiar el slug para que sea seguro como nombre de archivo
-    safe_slug = "".join(c if c.isalnum() or c in "-_" else "_" for c in slug).strip("_")
-    if not safe_slug:
-        safe_slug = "propuesta"
-
-    filename = f"{safe_slug}_{uuid.uuid4().hex[:8]}.docx"
-    out_path = os.path.join(OUTPUT_DIR, filename)
-    generate_proposal(proposal_data, out_path)
-    return out_path
+def _dataclass_to_dict(obj: Any) -> Any:
+    """Recursivamente convierte dataclasses a dicts (para inyectar en proposal_data)."""
+    if is_dataclass(obj):
+        return asdict(obj)
+    if isinstance(obj, list):
+        return [_dataclass_to_dict(x) for x in obj]
+    if isinstance(obj, dict):
+        return {k: _dataclass_to_dict(v) for k, v in obj.items()}
+    return obj
 
 
-# ---------------------------------------------------------------------------
-# Modelos Pydantic (solo para documentación — el payload es pasthrough)
-# ---------------------------------------------------------------------------
-
-class GenerateRequest(BaseModel):
+def _build_calc_and_plan(calc_inputs: Dict[str, Any]):
     """
-    El body debe ser el objeto proposal_data completo.
-    Opcionalmente puede incluir el campo especial __slug__ para controlar
-    el nombre del archivo de salida.
+    Toma el dict `calculadora_inputs` que viene del JSON, construye los
+    dataclasses, ejecuta la lógica y devuelve (calc_output, plan_output).
     """
-    model_config = {"extra": "allow"}
+    # Extraer sala_actual (va al plan, no a la calculadora)
+    sala_actual = calc_inputs.get("sala_actual")
+
+    # Filtrar los kwargs válidos para CalculadoraInversionInput
+    valid_keys = {
+        "unidades_totales", "ticket_promedio", "absorcion_meses",
+        "tasa_cita", "tasa_asistencia", "tasa_apartado", "tasa_cierre",
+        "cpl_override", "porcentaje_inversion_override",
+    }
+    calc_kwargs = {k: v for k, v in calc_inputs.items() if k in valid_keys and v is not None}
+
+    # Validar requeridos
+    for required in ("unidades_totales", "ticket_promedio", "absorcion_meses"):
+        if required not in calc_kwargs:
+            raise HTTPException(
+                status_code=400,
+                detail=f"calculadora_inputs.{required} es obligatorio cuando se incluye calculadora_inputs",
+            )
+
+    calc_input = CalculadoraInversionInput(**calc_kwargs)
+    calc_output = calcular_inversion(calc_input)
+
+    plan_input = PlanInversionInput(
+        calculadora=calc_output,
+        sala_actual=sala_actual,
+    )
+    plan_output = calcular_plan_12_meses(plan_input)
+
+    return calc_output, plan_output
 
 
-class GenerateResponse(BaseModel):
-    status: str
-    filename: str
-    size_bytes: int
-    docx_base64: str | None = None
-
-
-class ErrorResponse(BaseModel):
-    status: str = "error"
-    error_type: str
-    message: str
-    errors: list[str] | None = None
-
-
-# ---------------------------------------------------------------------------
-# Endpoints
-# ---------------------------------------------------------------------------
+# =============================================================================
+# ENDPOINTS
+# =============================================================================
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "zebra-proposal-api", "version": "1.0.0"}
+    return {
+        "status": "ok",
+        "service": "zebra-proposal-api",
+        "version": API_VERSION,
+    }
 
 
-@app.post(
-    "/generate",
-    responses={
-        200: {
-            "content": {"application/vnd.openxmlformats-officedocument.wordprocessingml.document": {}},
-            "description": "DOCX binario con la propuesta generada.",
-        },
-        400: {"model": ErrorResponse},
-        401: {"model": ErrorResponse},
-        500: {"model": ErrorResponse},
-    },
-)
-async def generate(request: Request):
+@app.post("/generate")
+async def generate(request: Request, x_api_key: Optional[str] = Header(None)):
     """
-    Recibe proposal_data como JSON en el body y devuelve el DOCX binario.
+    Genera el DOCX de la propuesta.
 
-    Headers:
-        Content-Type: application/json
-        X-API-Key: <key>  (si ZEBRA_API_KEY está seteada)
-
-    Opcional en el body: campo __slug__ para nombrar el archivo (ej: "grupo_indes").
+    Body: proposal_data (ver esquema del prompt v3.2 n8n).
+    Si trae `calculadora_inputs`, el API ejecuta la lógica de calculadora y plan
+    antes de invocar el builder.
     """
-    _check_auth(request)
+    _check_auth(x_api_key)
 
     try:
-        data = await request.json()
-    except Exception as exc:
-        raise HTTPException(
-            status_code=400,
-            detail={"error_type": "JSONDecodeError", "message": str(exc)},
-        )
+        body = await request.json()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Body no es JSON válido: {e}")
 
-    # Soporte para diagnóstico preliminar (Claude puede devolverlo en casos
-    # de información insuficiente). En ese caso no generamos DOCX; devolvemos
-    # el diagnóstico tal cual con status 200 y content-type JSON.
-    if isinstance(data, dict) and data.get("status") == "diagnostico_preliminar":
-        return JSONResponse(content=data, status_code=200)
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="Body debe ser un objeto JSON.")
 
-    errors = _validate_schema(data)
-    if errors:
-        raise HTTPException(
-            status_code=400,
-            detail={
-                "error_type": "ValidationError",
-                "message": "El JSON no cumple el esquema mínimo.",
-                "errors": errors,
+    # Branch de diagnóstico preliminar (Claude devolvió que no tiene datos)
+    if body.get("status") == "diagnostico_preliminar":
+        return JSONResponse(
+            status_code=200,
+            content={
+                "status": "diagnostico_preliminar",
+                "razon": body.get("razon", ""),
+                "preguntas_criticas": body.get("preguntas_criticas", []),
+                "lo_que_si_entendimos": body.get("lo_que_si_entendimos", ""),
+                "docx_generated": False,
             },
         )
 
-    slug = data.pop("__slug__", data.get("subtitulo_propuesta", "propuesta"))
+    # Si trae calculadora_inputs → calcular y reemplazar por calculadora_inversion + plan_12_meses
+    if "calculadora_inputs" in body and body["calculadora_inputs"]:
+        try:
+            calc_output, plan_output = _build_calc_and_plan(body["calculadora_inputs"])
+            body["calculadora_inversion"] = calc_output
+            body["plan_12_meses"] = plan_output
+            log.info("Calculadora + plan 12 meses ejecutados correctamente.")
+        except HTTPException:
+            raise
+        except Exception as e:
+            log.exception("Error calculando calculadora/plan")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Error procesando calculadora_inputs: {e}",
+            )
+        # Limpieza: el builder no necesita el campo de inputs crudos
+        body.pop("calculadora_inputs", None)
+
+    # Generar nombre de archivo
+    slug = body.pop("__slug__", None) or _slugify(
+        body.get("subtitulo_propuesta") or body.get("cliente") or "propuesta"
+    )
+    filename = f"propuesta_{slug}_{uuid.uuid4().hex[:8]}.docx"
+    output_path = OUTPUT_DIR / filename
 
     try:
-        out_path = _build_docx(data, slug=slug)
-    except Exception as exc:
-        raise HTTPException(
-            status_code=500,
-            detail={"error_type": type(exc).__name__, "message": str(exc)},
-        )
+        generate_proposal(body, str(output_path))
+        log.info("DOCX generado: %s", output_path)
+    except Exception as e:
+        log.exception("Error generando DOCX")
+        raise HTTPException(status_code=500, detail=f"Error generando DOCX: {e}")
 
-    filename = os.path.basename(out_path)
     return FileResponse(
-        path=out_path,
+        path=str(output_path),
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        filename=f"Propuesta_Zebra_{slug}.docx",
-        headers={
-            "X-Generated-Filename": filename,
-            "X-Size-Bytes": str(os.path.getsize(out_path)),
-        },
+        filename=filename,
     )
 
 
-@app.post(
-    "/generate/base64",
-    response_model=GenerateResponse,
-    responses={
-        400: {"model": ErrorResponse},
-        401: {"model": ErrorResponse},
-        500: {"model": ErrorResponse},
-    },
-)
-async def generate_base64(request: Request):
+@app.post("/generate-excel")
+async def generate_excel(request: Request, x_api_key: Optional[str] = Header(None)):
     """
-    Igual que /generate pero devuelve el DOCX como base64 dentro de un JSON.
-    Útil cuando el cliente prefiere manejar todo como JSON (ej: n8n donde
-    el post-procesamiento es más simple).
+    Genera el Excel anexo de Proyección de Inversión.
+
+    Body: proposal_data con `calculadora_inputs` (obligatorio).
+    El API ejecuta la lógica de calculadora y plan, y genera el Excel.
     """
-    _check_auth(request)
+    _check_auth(x_api_key)
 
     try:
-        data = await request.json()
-    except Exception as exc:
+        body = await request.json()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Body no es JSON válido: {e}")
+
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="Body debe ser un objeto JSON.")
+
+    calc_inputs = body.get("calculadora_inputs")
+    if not calc_inputs:
         raise HTTPException(
             status_code=400,
-            detail={"error_type": "JSONDecodeError", "message": str(exc)},
+            detail=(
+                "calculadora_inputs es obligatorio en /generate-excel. "
+                "Si Claude no lo emitió, no debiste llamar a este endpoint."
+            ),
         )
-
-    if isinstance(data, dict) and data.get("status") == "diagnostico_preliminar":
-        return JSONResponse(content=data, status_code=200)
-
-    errors = _validate_schema(data)
-    if errors:
-        raise HTTPException(
-            status_code=400,
-            detail={
-                "error_type": "ValidationError",
-                "message": "El JSON no cumple el esquema mínimo.",
-                "errors": errors,
-            },
-        )
-
-    slug = data.pop("__slug__", data.get("subtitulo_propuesta", "propuesta"))
 
     try:
-        out_path = _build_docx(data, slug=slug)
-    except Exception as exc:
+        calc_output, plan_output = _build_calc_and_plan(calc_inputs)
+        log.info("Calculadora + plan 12 meses ejecutados para Excel anexo.")
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.exception("Error calculando calculadora/plan para Excel")
         raise HTTPException(
-            status_code=500,
-            detail={"error_type": type(exc).__name__, "message": str(exc)},
+            status_code=400,
+            detail=f"Error procesando calculadora_inputs: {e}",
         )
 
-    with open(out_path, "rb") as fh:
-        docx_b64 = base64.b64encode(fh.read()).decode("ascii")
+    slug = body.pop("__slug__", None) or _slugify(
+        body.get("subtitulo_propuesta") or body.get("cliente") or "anexo"
+    )
+    filename = f"anexo_proyeccion_{slug}_{uuid.uuid4().hex[:8]}.xlsx"
+    output_path = OUTPUT_DIR / filename
 
-    return GenerateResponse(
-        status="ok",
-        filename=os.path.basename(out_path),
-        size_bytes=os.path.getsize(out_path),
-        docx_base64=docx_b64,
+    try:
+        generate_investment_excel(calc_output, plan_output, str(output_path))
+        log.info("XLSX generado: %s", output_path)
+    except Exception as e:
+        log.exception("Error generando XLSX")
+        raise HTTPException(status_code=500, detail=f"Error generando XLSX: {e}")
+
+    return FileResponse(
+        path=str(output_path),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        filename=filename,
     )
 
 
-# Manejador de HTTPException para dejar el formato de error consistente
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
-    detail = exc.detail if isinstance(exc.detail, dict) else {"message": str(exc.detail)}
-    payload = {"status": "error", **detail}
-    return JSONResponse(status_code=exc.status_code, content=payload)
+# =============================================================================
+# ENTRY POINT
+# =============================================================================
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("zebra_api:app", host="0.0.0.0", port=8080, reload=False)
