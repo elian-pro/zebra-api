@@ -73,6 +73,31 @@ def remove_cell_borders(cell):
     set_cell_borders(cell, top=False, bottom=False, left=False, right=False)
 
 
+def set_row_cant_split(row):
+    """
+    Evita que una fila de tabla se rompa entre páginas.
+    Si la fila no cabe completa en la página actual, se mueve completa a la siguiente.
+    """
+    tr_pr = row._tr.get_or_add_trPr()
+    cant_split = OxmlElement('w:cantSplit')
+    tr_pr.append(cant_split)
+
+
+def set_table_cant_split(table):
+    """Aplica cantSplit a todas las filas de una tabla."""
+    for row in table.rows:
+        set_row_cant_split(row)
+
+
+def set_keep_with_next(paragraph):
+    """
+    Mantiene un párrafo junto al siguiente. Útil para que un encabezado
+    no se separe del contenido que le sigue.
+    """
+    pf = paragraph.paragraph_format
+    pf.keep_with_next = True
+
+
 def set_cell_vertical_alignment(cell, alignment='center'):
     """center, top, bottom"""
     tc_pr = cell._tc.get_or_add_tcPr()
@@ -114,7 +139,8 @@ def style_run(run, size=10, bold=False, color=ZEBRA_DARK_GREY,
 
 def add_styled_paragraph(container, text, size=10, bold=False,
                          color=ZEBRA_DARK_GREY, alignment=None,
-                         space_before=0, space_after=0, line_spacing=1.15):
+                         space_before=0, space_after=0, line_spacing=1.15,
+                         italic=False):
     """
     Agrega un párrafo estilizado a un contenedor (doc o cell).
     Retorna el párrafo creado.
@@ -127,7 +153,7 @@ def add_styled_paragraph(container, text, size=10, bold=False,
     pf.space_after = Pt(space_after)
     pf.line_spacing = line_spacing
     run = p.add_run(text)
-    style_run(run, size=size, bold=bold, color=color)
+    style_run(run, size=size, bold=bold, color=color, italic=italic)
     return p
 
 
@@ -224,6 +250,7 @@ def build_header_tripartita(doc, cliente, modelo, objetivo):
     table = doc.add_table(rows=1, cols=3)
     table.autofit = False
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    set_table_cant_split(table)
 
     # Anchos totales = 9360 dxa (8.5" - 1.5" márgenes = 7")
     col_width = Inches(7.0 / 3)
@@ -275,6 +302,7 @@ def build_section_header(doc, numero, titulo):
     table.autofit = False
     table.columns[0].width = Inches(0.6)
     table.columns[1].width = Inches(6.4)
+    set_table_cant_split(table)
 
     # Celda del número (amarilla)
     cell_num = table.rows[0].cells[0]
@@ -329,6 +357,7 @@ def build_context_section(doc, intro, proyectos_titulo, proyectos_items,
     col_width = Inches(3.5)
     for col in table.columns:
         col.width = col_width
+    set_table_cant_split(table)
 
     # Celda 1 — Proyectos
     cell_left = table.rows[0].cells[0]
@@ -388,6 +417,7 @@ def build_diagnosis_boxes(doc, diagnostics):
         table = doc.add_table(rows=1, cols=1)
         table.autofit = False
         table.columns[0].width = Inches(7.0)
+        set_table_cant_split(table)
 
         cell = table.rows[0].cells[0]
         cell.width = Inches(7.0)
@@ -453,6 +483,7 @@ def build_paradigm_shift(doc, antes_titulo, antes_texto,
     table = doc.add_table(rows=1, cols=1)
     table.autofit = False
     table.columns[0].width = Inches(7.0)
+    set_table_cant_split(table)
 
     cell = table.rows[0].cells[0]
     cell.width = Inches(7.0)
@@ -496,6 +527,7 @@ def build_system_models(doc, intro, modelos):
     col_width = Inches(7.0 / n)
     for col in table.columns:
         col.width = col_width
+    set_table_cant_split(table)
 
     for i, modelo in enumerate(modelos):
         cell = table.rows[0].cells[i]
@@ -573,6 +605,7 @@ def _build_arch_item(doc, item):
     table.autofit = False
     table.columns[0].width = Inches(0.55)
     table.columns[1].width = Inches(6.45)
+    set_table_cant_split(table)
 
     # Celda del número — NEGRA con número amarillo
     cell_num = table.rows[0].cells[0]
@@ -636,6 +669,7 @@ def build_content_pieces(doc, intro, piezas):
     widths = [Inches(0.5), Inches(2.5), Inches(4.0)]
     for i, w in enumerate(widths):
         table.columns[i].width = w
+    set_table_cant_split(table)  # ninguna fila se rompe entre páginas
 
     # Header
     header_texts = ["#", "PIEZA", "FUNCIÓN EN EL SISTEMA"]
@@ -710,36 +744,34 @@ def build_content_pieces(doc, intro, piezas):
 def build_implementation_phases(doc, fases):
     """
     Sección 07 — Plan de implementación.
-    4 fases, cada una con nombre, semanas, título y actividades.
-    `fases` es lista de {fase, semanas, titulo, actividades}
+    4 fases, cada una con nombre, título y actividades.
+    `fases` es lista de {fase, titulo, actividades}.
+
+    NOTA: el campo `semanas` ya no se usa en el render (puede o no estar en
+    el dict de entrada; si está, simplemente se ignora).
     """
     for fase in fases:
         table = doc.add_table(rows=1, cols=2)
         table.autofit = False
         table.columns[0].width = Inches(1.5)
         table.columns[1].width = Inches(5.5)
+        set_table_cant_split(table)
 
-        # Celda izquierda — nombre de fase + semanas
+        # Celda izquierda — nombre de fase (centrado vertical sin semanas debajo)
         cell_left = table.rows[0].cells[0]
         cell_left.width = Inches(1.5)
         set_cell_background(cell_left, ZEBRA_BLACK)
         set_cell_borders(cell_left, color=ZEBRA_BLACK, size=4)
         set_cell_margins(cell_left, top=140, bottom=140, left=140, right=140)
-        set_cell_vertical_alignment(cell_left, 'top')
+        set_cell_vertical_alignment(cell_left, 'center')
 
         cell_left.paragraphs[0].clear()
         p = cell_left.paragraphs[0]
         pf = p.paragraph_format
         pf.space_before = Pt(0)
-        pf.space_after = Pt(4)
+        pf.space_after = Pt(0)
         r = p.add_run(fase['fase'])
         style_run(r, size=11, bold=True, color=ZEBRA_YELLOW)
-
-        add_styled_paragraph(
-            cell_left, fase['semanas'],
-            size=8.5, color=ZEBRA_WHITE,
-            space_before=0, space_after=0
-        )
 
         # Celda derecha — título + actividades
         cell_right = table.rows[0].cells[1]
@@ -783,6 +815,7 @@ def build_kpi_row(doc, kpis):
     col_width = Inches(7.0 / n)
     for col in table.columns:
         col.width = col_width
+    set_table_cant_split(table)
 
     for i, kpi in enumerate(kpis):
         cell = table.rows[0].cells[i]
@@ -821,6 +854,7 @@ def build_base_scenario(doc, titulo, subtitulo, bullets, cierre):
     table = doc.add_table(rows=1, cols=1)
     table.autofit = False
     table.columns[0].width = Inches(7.0)
+    set_table_cant_split(table)
 
     cell = table.rows[0].cells[0]
     cell.width = Inches(7.0)
@@ -863,6 +897,7 @@ def build_base_scenario(doc, titulo, subtitulo, bullets, cierre):
         table2 = doc.add_table(rows=1, cols=1)
         table2.autofit = False
         table2.columns[0].width = Inches(7.0)
+        set_table_cant_split(table2)
 
         cell2 = table2.rows[0].cells[0]
         cell2.width = Inches(7.0)
@@ -896,6 +931,7 @@ def build_investment_section(doc, setup_titulo, setup_monto, setup_items,
     col_width = Inches(3.5)
     for col in table.columns:
         col.width = col_width
+    set_table_cant_split(table)
 
     for i, (titulo, monto, items) in enumerate([
         (setup_titulo, setup_monto, setup_items),
@@ -938,6 +974,7 @@ def build_investment_section(doc, setup_titulo, setup_monto, setup_items,
     table2 = doc.add_table(rows=1, cols=1)
     table2.autofit = False
     table2.columns[0].width = Inches(7.0)
+    set_table_cant_split(table2)
 
     cell2 = table2.rows[0].cells[0]
     cell2.width = Inches(7.0)
@@ -982,6 +1019,7 @@ def build_why_zebra(doc, agencia_normal, zebra_texto, cierre):
     col_width = Inches(3.5)
     for col in table.columns:
         col.width = col_width
+    set_table_cant_split(table)
 
     # Agencia normal
     cell_left = table.rows[0].cells[0]
@@ -1032,6 +1070,7 @@ def build_why_zebra(doc, agencia_normal, zebra_texto, cierre):
         table2 = doc.add_table(rows=1, cols=1)
         table2.autofit = False
         table2.columns[0].width = Inches(7.0)
+        set_table_cant_split(table2)
 
         cell2 = table2.rows[0].cells[0]
         cell2.width = Inches(7.0)
@@ -1060,6 +1099,7 @@ def build_final_closing(doc, lineas):
     table = doc.add_table(rows=1, cols=1)
     table.autofit = False
     table.columns[0].width = Inches(7.0)
+    set_table_cant_split(table)
 
     cell = table.rows[0].cells[0]
     cell.width = Inches(7.0)
@@ -1084,6 +1124,320 @@ def build_final_closing(doc, lineas):
         style_run(r, size=12, bold=True, color=ZEBRA_WHITE)
 
     add_spacer(doc, 6)
+
+
+def build_investment_calculator_box(doc, calc_output, anexo_excel_nota=True):
+    """
+    Bloque visual condensado de la Calculadora de Inversión.
+    Se inserta DENTRO de la sección 09 (Inversión), después de la pauta.
+
+    `calc_output` es un objeto CalculadoraInversionOutput de zebra_investment_calc.
+    """
+    from zebra_investment_calc import fmt_mxn, fmt_pct, fmt_int, fmt_roa, fmt_short_mxn
+
+    # Header del bloque
+    add_styled_paragraph(
+        doc, "CALCULADORA DE INVERSIÓN — VALOR DE PROYECTO Y ABSORCIÓN",
+        size=9, bold=True, color=ZEBRA_MID_GREY,
+        space_before=4, space_after=6
+    )
+
+    # Tabla de 3 filas × 3 columnas con métricas clave (caja negra estilo KPI)
+    metricas_grid = [
+        # Fila 1: Valor del proyecto y % inversión
+        [
+            ("VALOR DEL PROYECTO", fmt_short_mxn(calc_output.valor_proyecto)),
+            ("% INVERSIÓN PROMEDIO", fmt_pct(calc_output.porcentaje_inversion, 1)),
+            ("PRESUPUESTO TOTAL", fmt_short_mxn(calc_output.presupuesto_total)),
+        ],
+        # Fila 2: Operación mensual
+        [
+            ("PAUTA MENSUAL", fmt_short_mxn(calc_output.inversion_pauta_mensual)),
+            ("LEADS MENSUALES", fmt_int(calc_output.leads_esperados_mensuales)),
+            ("CPL ESTIMADO", fmt_mxn(calc_output.cpl)),
+        ],
+        # Fila 3: Capacidad y retorno
+        [
+            ("ABSORCIÓN OBJETIVO", f"{calc_output.absorcion_meses} meses"),
+            ("SALA NECESARIA", f"{calc_output.sala_necesaria} asesores"),
+            ("ROA ESPERADO", fmt_roa(calc_output.roa)),
+        ],
+    ]
+
+    table = doc.add_table(rows=3, cols=3)
+    table.autofit = False
+    col_w = Inches(7.0 / 3)
+    for col in table.columns:
+        col.width = col_w
+    set_table_cant_split(table)
+
+    for r_idx, fila in enumerate(metricas_grid):
+        for c_idx, (label, valor) in enumerate(fila):
+            cell = table.rows[r_idx].cells[c_idx]
+            cell.width = col_w
+            set_cell_background(cell, ZEBRA_BLACK)
+            set_cell_borders(cell, color=ZEBRA_BLACK, size=4)
+            set_cell_margins(cell, top=120, bottom=120, left=140, right=140)
+            set_cell_vertical_alignment(cell, 'center')
+
+            cell.paragraphs[0].clear()
+            p = cell.paragraphs[0]
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            pf = p.paragraph_format
+            pf.space_before = Pt(0)
+            pf.space_after = Pt(2)
+            r = p.add_run(label)
+            style_run(r, size=7.5, bold=True, color=ZEBRA_MID_GREY)
+
+            p2 = cell.add_paragraph()
+            p2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            pf2 = p2.paragraph_format
+            pf2.space_before = Pt(0)
+            pf2.space_after = Pt(0)
+            r2 = p2.add_run(valor)
+            style_run(r2, size=14, bold=True, color=ZEBRA_YELLOW)
+
+    add_spacer(doc, 6)
+
+    # Cascada del funnel
+    add_styled_paragraph(
+        doc, "EFICIENCIA COMERCIAL ESPERADA (mensual)",
+        size=9, bold=True, color=ZEBRA_MID_GREY,
+        space_before=2, space_after=4
+    )
+
+    funnel_table = doc.add_table(rows=1, cols=4)
+    funnel_table.autofit = False
+    fcol_w = Inches(7.0 / 4)
+    for col in funnel_table.columns:
+        col.width = fcol_w
+    set_table_cant_split(funnel_table)
+
+    funnel_data = [
+        ("CITAS", fmt_int(calc_output.citas_esperadas), fmt_pct(calc_output.tasas['cita'])),
+        ("ASISTENCIAS", fmt_int(calc_output.asistencias_esperadas), fmt_pct(calc_output.tasas['asistencia'])),
+        ("APARTADOS", fmt_int(calc_output.apartados_esperados), fmt_pct(calc_output.tasas['apartado'])),
+        ("CIERRES", fmt_int(calc_output.cierres_esperados), fmt_pct(calc_output.tasas['cierre'])),
+    ]
+
+    for i, (label, valor, tasa) in enumerate(funnel_data):
+        cell = funnel_table.rows[0].cells[i]
+        cell.width = fcol_w
+        set_cell_background(cell, ZEBRA_BG_LIGHT)
+        set_cell_borders(cell, color=ZEBRA_LIGHT_GREY, size=4)
+        set_cell_margins(cell, top=120, bottom=120, left=120, right=120)
+        set_cell_vertical_alignment(cell, 'center')
+
+        cell.paragraphs[0].clear()
+        p = cell.paragraphs[0]
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        pf = p.paragraph_format
+        pf.space_before = Pt(0)
+        pf.space_after = Pt(2)
+        r = p.add_run(label)
+        style_run(r, size=7.5, bold=True, color=ZEBRA_MID_GREY)
+
+        p2 = cell.add_paragraph()
+        p2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        pf2 = p2.paragraph_format
+        pf2.space_before = Pt(0)
+        pf2.space_after = Pt(2)
+        r2 = p2.add_run(valor)
+        style_run(r2, size=16, bold=True, color=ZEBRA_BLACK)
+
+        p3 = cell.add_paragraph()
+        p3.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        pf3 = p3.paragraph_format
+        pf3.space_before = Pt(0)
+        pf3.space_after = Pt(0)
+        r3 = p3.add_run(f"({tasa})")
+        style_run(r3, size=8, color=ZEBRA_MID_GREY)
+
+    add_spacer(doc, 6)
+
+    # Nota explicativa
+    nota = (
+        "Cálculo basado en ingeniería inversa: valor del proyecto × 3% (promedio fijo "
+        "de inversión sobre valor) ÷ absorción objetivo. El % es punto de partida; se "
+        "ajusta según ticket y dinámica del proyecto. Tasas de conversión basadas en "
+        "benchmarks Zebra Real Estate."
+    )
+    if anexo_excel_nota:
+        nota += " Detalle mensual completo en Excel anexo."
+
+    add_styled_paragraph(
+        doc, nota,
+        size=8.5, italic=True, color=ZEBRA_MID_GREY,
+        space_before=0, space_after=8, line_spacing=1.4
+    )
+
+
+def build_12_month_projection(doc, plan_output, calc_output):
+    """
+    Sección 10 — Proyección a 12 meses (vista trimestral compacta).
+
+    `plan_output` es PlanInversionOutput.
+    `calc_output` es CalculadoraInversionOutput (para contexto).
+    """
+    from zebra_investment_calc import fmt_mxn, fmt_short_mxn, fmt_int, fmt_roa
+
+    # Intro
+    intro = (
+        f"Proyección de operación para 12 meses considerando crecimiento progresivo "
+        f"de la sala de ventas (de {plan_output.sala_inicial} a {plan_output.sala_final} "
+        f"asesores) y ventanas reales de conversión "
+        f"(cita 10 días · apartado 45 días · cierre 90 días)."
+    )
+    add_styled_paragraph(
+        doc, intro,
+        size=10, color=ZEBRA_DARK_GREY,
+        space_before=0, space_after=10, line_spacing=1.4
+    )
+
+    # Tabla trimestral: 5 columnas (concepto + 4 trimestres)
+    headers = ["CONCEPTO", "TRIM. 1", "TRIM. 2", "TRIM. 3", "TRIM. 4"]
+    filas = [
+        ("Asesores promedio",
+         [f"{t.asesores_promedio:.1f}" for t in plan_output.trimestres]),
+        ("Leads generados",
+         [fmt_int(t.leads_total) for t in plan_output.trimestres]),
+        ("Inversión en pauta",
+         [fmt_short_mxn(t.inversion_total) for t in plan_output.trimestres]),
+        ("Citas reales",
+         [fmt_int(t.citas_reales) for t in plan_output.trimestres]),
+        ("Apartados reales",
+         [fmt_int(t.apartados_reales) for t in plan_output.trimestres]),
+        ("Cierres reales",
+         [fmt_int(t.cierres_reales) for t in plan_output.trimestres]),
+        ("Ingresos (1.0 unidad/op)",
+         [fmt_short_mxn(t.ingresos_por_escenario[1.0]) for t in plan_output.trimestres]),
+        ("Margen acumulado",
+         [fmt_short_mxn(t.margen_por_escenario[1.0]) for t in plan_output.trimestres]),
+    ]
+
+    n_rows = 1 + len(filas)
+    table = doc.add_table(rows=n_rows, cols=5)
+    table.autofit = False
+    col_widths = [Inches(2.2), Inches(1.2), Inches(1.2), Inches(1.2), Inches(1.2)]
+    for i, w in enumerate(col_widths):
+        table.columns[i].width = w
+    set_table_cant_split(table)
+
+    # Header
+    for i, h in enumerate(headers):
+        cell = table.rows[0].cells[i]
+        cell.width = col_widths[i]
+        set_cell_background(cell, ZEBRA_BLACK)
+        set_cell_borders(cell, color=ZEBRA_BLACK, size=4)
+        set_cell_margins(cell, top=80, bottom=80, left=120, right=120)
+        set_cell_vertical_alignment(cell, 'center')
+
+        cell.paragraphs[0].clear()
+        p = cell.paragraphs[0]
+        p.alignment = WD_ALIGN_PARAGRAPH.LEFT if i == 0 else WD_ALIGN_PARAGRAPH.CENTER
+        pf = p.paragraph_format
+        pf.space_before = Pt(0)
+        pf.space_after = Pt(0)
+        r = p.add_run(h)
+        style_run(r, size=8.5, bold=True, color=ZEBRA_YELLOW)
+
+    # Filas
+    for r_idx, (concepto, valores) in enumerate(filas, start=1):
+        # Concepto (columna 1)
+        cell = table.rows[r_idx].cells[0]
+        cell.width = col_widths[0]
+        set_cell_background(cell, ZEBRA_WHITE)
+        set_cell_borders(cell, color=ZEBRA_LIGHT_GREY, size=4)
+        set_cell_margins(cell, top=80, bottom=80, left=140, right=120)
+        set_cell_vertical_alignment(cell, 'center')
+
+        cell.paragraphs[0].clear()
+        p = cell.paragraphs[0]
+        pf = p.paragraph_format
+        pf.space_before = Pt(0)
+        pf.space_after = Pt(0)
+        r = p.add_run(concepto)
+        style_run(r, size=9, bold=True, color=ZEBRA_BLACK)
+
+        # Valores trimestrales (columnas 2-5)
+        for c_idx, valor in enumerate(valores, start=1):
+            cell_v = table.rows[r_idx].cells[c_idx]
+            cell_v.width = col_widths[c_idx]
+            set_cell_background(cell_v, ZEBRA_WHITE)
+            set_cell_borders(cell_v, color=ZEBRA_LIGHT_GREY, size=4)
+            set_cell_margins(cell_v, top=80, bottom=80, left=120, right=120)
+            set_cell_vertical_alignment(cell_v, 'center')
+
+            cell_v.paragraphs[0].clear()
+            p = cell_v.paragraphs[0]
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            pf = p.paragraph_format
+            pf.space_before = Pt(0)
+            pf.space_after = Pt(0)
+            r = p.add_run(valor)
+            style_run(r, size=9, color=ZEBRA_DARK_GREY)
+
+    add_spacer(doc, 8)
+
+    # Caja de totales 12 meses (fondo negro estilo KPI)
+    add_styled_paragraph(
+        doc, "RESUMEN ANUAL — TOTALES 12 MESES",
+        size=9, bold=True, color=ZEBRA_MID_GREY,
+        space_before=2, space_after=4
+    )
+
+    totales = [
+        ("INVERSIÓN TOTAL", fmt_short_mxn(plan_output.inversion_total_anual)),
+        ("CIERRES REALES", fmt_int(plan_output.cierres_reales_anual)),
+        ("INGRESOS PROYECTADOS", fmt_short_mxn(plan_output.ingresos_anual_por_escenario[1.0])),
+        ("ROA ANUAL", fmt_roa(plan_output.roa_anual_por_escenario[1.0])),
+    ]
+
+    tot_table = doc.add_table(rows=1, cols=4)
+    tot_table.autofit = False
+    tcol_w = Inches(7.0 / 4)
+    for col in tot_table.columns:
+        col.width = tcol_w
+    set_table_cant_split(tot_table)
+
+    for i, (label, valor) in enumerate(totales):
+        cell = tot_table.rows[0].cells[i]
+        cell.width = tcol_w
+        set_cell_background(cell, ZEBRA_BLACK)
+        set_cell_borders(cell, color=ZEBRA_BLACK, size=4)
+        set_cell_margins(cell, top=140, bottom=140, left=120, right=120)
+        set_cell_vertical_alignment(cell, 'center')
+
+        cell.paragraphs[0].clear()
+        p = cell.paragraphs[0]
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        pf = p.paragraph_format
+        pf.space_before = Pt(0)
+        pf.space_after = Pt(2)
+        r = p.add_run(label)
+        style_run(r, size=7.5, bold=True, color=ZEBRA_MID_GREY)
+
+        p2 = cell.add_paragraph()
+        p2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        pf2 = p2.paragraph_format
+        pf2.space_before = Pt(0)
+        pf2.space_after = Pt(0)
+        r2 = p2.add_run(valor)
+        style_run(r2, size=15, bold=True, color=ZEBRA_YELLOW)
+
+    add_spacer(doc, 6)
+
+    # Nota al pie
+    nota = (
+        "Proyección base con 1 unidad por operación. El Excel anexo incluye escenarios "
+        "1.2x / 1.4x / 1.6x para casos donde el cliente compra más de una unidad por "
+        "operación, así como detalle mensual completo y todos los inputs editables."
+    )
+    add_styled_paragraph(
+        doc, nota,
+        size=8.5, italic=True, color=ZEBRA_MID_GREY,
+        space_before=0, space_after=8, line_spacing=1.4
+    )
 
 
 def build_signature(doc, firma="Zebra High Performance Marketing"):
@@ -1317,9 +1671,28 @@ def generate_proposal(data, output_path):
         pauta_texto=inv['pauta_texto'],
         pauta_fase_inicial=inv.get('pauta_fase_inicial', '')
     )
+
+    # 09 (continuación) — Calculadora de Inversión (opcional, solo si hay datos completos)
+    if 'calculadora_inversion' in data and data['calculadora_inversion']:
+        build_investment_calculator_box(
+            doc,
+            calc_output=data['calculadora_inversion'],
+            anexo_excel_nota=data.get('genera_excel_anexo', True)
+        )
     section_num += 1
 
-    # 10 — Por qué Zebra
+    # 10 — Proyección a 12 meses (opcional, solo si hay datos completos)
+    if ('plan_12_meses' in data and data['plan_12_meses']
+            and 'calculadora_inversion' in data and data['calculadora_inversion']):
+        build_section_header(doc, f"{section_num:02d}", "PROYECCIÓN A 12 MESES")
+        build_12_month_projection(
+            doc,
+            plan_output=data['plan_12_meses'],
+            calc_output=data['calculadora_inversion']
+        )
+        section_num += 1
+
+    # 11 — Por qué Zebra
     build_section_header(doc, f"{section_num:02d}", "POR QUÉ ZEBRA")
     pz = data['por_que_zebra']
     build_why_zebra(
@@ -1330,7 +1703,7 @@ def generate_proposal(data, output_path):
     )
     section_num += 1
 
-    # 11 — Cierre (opcional)
+    # 12 — Cierre (opcional)
     if 'cierre_final' in data and data['cierre_final']:
         build_section_header(doc, f"{section_num:02d}", "CIERRE")
         build_final_closing(doc, data['cierre_final'])
