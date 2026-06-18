@@ -224,22 +224,67 @@ def add_spacer(doc, height_pt=6):
 # BLOQUES CONSTRUCTIVOS DE LA PROPUESTA
 # =============================================================================
 
+def add_wordmark_logo(paragraph, text="ZEBRA", size=20, color=ZEBRA_BLACK,
+                      tracking=120):
+    """
+    Renderiza el wordmark "ZEBRA" como logo tipográfico con tracking
+    (120 = 6 pt en veinteavos de punto) para reproducir el look oficial.
+    """
+    r = paragraph.add_run(text)
+    style_run(r, size=size, bold=True, color=color)
+    r_pr = r._element.get_or_add_rPr()
+    spacing = OxmlElement('w:spacing')
+    spacing.set(qn('w:val'), str(tracking))
+    r_pr.append(spacing)
+    return r
+
+
 def build_title_block(doc, titulo="PROPUESTA ESTRATÉGICA", subtitulo=""):
     """
-    Título principal de la propuesta.
-    Ej: "PROPUESTA ESTRATÉGICA" + "SEDE Desarrollos"
+    Título principal con logo ZEBRA en la esquina superior derecha.
+    Izquierda: títulos. Derecha: wordmark "ZEBRA".
     """
-    add_styled_paragraph(
-        doc, titulo,
-        size=10, bold=True, color=ZEBRA_MID_GREY,
-        space_before=0, space_after=2
-    )
+    table = doc.add_table(rows=1, cols=2)
+    table.autofit = False
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+
+    left_width = Inches(5.0)
+    right_width = Inches(2.0)
+    table.columns[0].width = left_width
+    table.columns[1].width = right_width
+
+    row = table.rows[0]
+    left, right = row.cells[0], row.cells[1]
+    left.width = left_width
+    right.width = right_width
+
+    # Columna izquierda: títulos
+    set_cell_vertical_alignment(left, 'center')
+    left.paragraphs[0].clear()
+    p_titulo = left.paragraphs[0]
+    pf = p_titulo.paragraph_format
+    pf.space_before = Pt(0)
+    pf.space_after = Pt(2)
+    r = p_titulo.add_run(titulo)
+    style_run(r, size=10, bold=True, color=ZEBRA_MID_GREY)
     if subtitulo:
         add_styled_paragraph(
-            doc, subtitulo,
+            left, subtitulo,
             size=22, bold=True, color=ZEBRA_BLACK,
-            space_before=0, space_after=12
+            space_before=0, space_after=0, line_spacing=1.0
         )
+
+    # Columna derecha: logo ZEBRA (esquina superior derecha)
+    set_cell_vertical_alignment(right, 'top')
+    right.paragraphs[0].clear()
+    p_logo = right.paragraphs[0]
+    p_logo.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    plf = p_logo.paragraph_format
+    plf.space_before = Pt(0)
+    plf.space_after = Pt(0)
+    add_wordmark_logo(p_logo, "ZEBRA", size=20, color=ZEBRA_BLACK)
+
+    add_spacer(doc, 8)
 
 
 def build_header_tripartita(doc, cliente, modelo, objetivo):
@@ -1137,7 +1182,7 @@ def build_investment_calculator_box(doc, calc_output, anexo_excel_nota=True):
 
     # Header del bloque
     add_styled_paragraph(
-        doc, "CALCULADORA DE INVERSIÓN — VALOR DE PROYECTO Y ABSORCIÓN",
+        doc, "CALCULADORA DE INVERSIÓN: VALOR DE PROYECTO Y ABSORCIÓN",
         size=9, bold=True, color=ZEBRA_MID_GREY,
         space_before=4, space_after=6
     )
@@ -1381,7 +1426,7 @@ def build_12_month_projection(doc, plan_output, calc_output):
 
     # Caja de totales 12 meses (fondo negro estilo KPI)
     add_styled_paragraph(
-        doc, "RESUMEN ANUAL — TOTALES 12 MESES",
+        doc, "RESUMEN ANUAL: TOTALES 12 MESES",
         size=9, bold=True, color=ZEBRA_MID_GREY,
         space_before=2, space_after=4
     )
@@ -1599,7 +1644,7 @@ def generate_proposal(data, output_path):
     )
 
     # 02 — Diagnóstico
-    build_section_header(doc, "02", "DIAGNÓSTICO — LA VERDAD INCÓMODA")
+    build_section_header(doc, "02", "DIAGNÓSTICO")
     build_diagnosis_boxes(doc, data['diagnostico'])
 
     # 03 — Cambio de paradigma
@@ -1630,7 +1675,7 @@ def generate_proposal(data, output_path):
     # 06 — Piezas de contenido (opcional)
     section_num = 6
     if 'contenido' in data and data['contenido']:
-        build_section_header(doc, f"{section_num:02d}", "PIEZAS DE CONTENIDO NECESARIAS")
+        build_section_header(doc, f"{section_num:02d}", "IDEAS DE CONTENIDOS")
         build_content_pieces(
             doc,
             intro=data['contenido']['intro'],
