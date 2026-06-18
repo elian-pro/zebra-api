@@ -224,26 +224,12 @@ def add_spacer(doc, height_pt=6):
 # BLOQUES CONSTRUCTIVOS DE LA PROPUESTA
 # =============================================================================
 
-def add_wordmark_logo(paragraph, text="ZEBRA", size=20, color=ZEBRA_BLACK,
-                      tracking=120):
-    """
-    Renderiza el wordmark "ZEBRA" como logo tipográfico con tracking
-    (120 = 6 pt en veinteavos de punto) para reproducir el look oficial.
-    """
-    r = paragraph.add_run(text)
-    style_run(r, size=size, bold=True, color=color)
-    r_pr = r._element.get_or_add_rPr()
-    spacing = OxmlElement('w:spacing')
-    spacing.set(qn('w:val'), str(tracking))
-    r_pr.append(spacing)
-    return r
-
-
 def build_title_block(doc, titulo="PROPUESTA ESTRATÉGICA", subtitulo=""):
     """
-    Título principal con logo ZEBRA en la esquina superior derecha.
-    Izquierda: títulos. Derecha: wordmark "ZEBRA".
+    Título principal con logo ZEBRA (PNG) en la esquina superior derecha.
+    Izquierda: títulos. Derecha: imagen zebra_logo.png.
     """
+    import os
     table = doc.add_table(rows=1, cols=2)
     table.autofit = False
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
@@ -274,7 +260,7 @@ def build_title_block(doc, titulo="PROPUESTA ESTRATÉGICA", subtitulo=""):
             space_before=0, space_after=0, line_spacing=1.0
         )
 
-    # Columna derecha: logo ZEBRA (esquina superior derecha)
+    # Columna derecha: logo ZEBRA PNG (esquina superior derecha)
     set_cell_vertical_alignment(right, 'top')
     right.paragraphs[0].clear()
     p_logo = right.paragraphs[0]
@@ -282,7 +268,8 @@ def build_title_block(doc, titulo="PROPUESTA ESTRATÉGICA", subtitulo=""):
     plf = p_logo.paragraph_format
     plf.space_before = Pt(0)
     plf.space_after = Pt(0)
-    add_wordmark_logo(p_logo, "ZEBRA", size=20, color=ZEBRA_BLACK)
+    logo_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "zebra_logo.png")
+    p_logo.add_run().add_picture(logo_path, width=Inches(1.5))
 
     add_spacer(doc, 8)
 
