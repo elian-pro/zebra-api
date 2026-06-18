@@ -228,7 +228,7 @@ def _build_plan_sheet(ws, calc_output, plan_output):
     # Título
     ws.merge_cells("A1:R1")
     title = ws["A1"]
-    _header_cell(title, "PLAN DE INVERSIÓN — PROYECCIÓN A 12 MESES",
+    _header_cell(title, "PLAN DE INVERSIÓN: PROYECCIÓN A 12 MESES",
                   fill_color=BLACK, font_color=YELLOW, size=14)
 
     ws.merge_cells("A2:R2")
@@ -264,7 +264,7 @@ def _build_plan_sheet(ws, calc_output, plan_output):
 
     # ------ PROYECCIÓN MENSUAL ------
     start_row = 18
-    ws.cell(row=start_row, column=1).value = "PROYECCIÓN MENSUAL — 12 MESES / 4 TRIMESTRES"
+    ws.cell(row=start_row, column=1).value = "PROYECCIÓN MENSUAL: 12 MESES / 4 TRIMESTRES"
     ws.cell(row=start_row, column=1).font = Font(
         name="Arial", size=10, bold=True, color=BLACK
     )
