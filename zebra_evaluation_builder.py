@@ -175,7 +175,8 @@ h1.cover-title { string-set: client-name content(); }
 }
 
 .cover-logo {
-    height: 0.9cm;
+    width: 2.5cm;
+    height: auto;
     margin-bottom: 1.5cm;
     display: block;
 }
