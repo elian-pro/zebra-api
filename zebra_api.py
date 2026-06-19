@@ -2,9 +2,10 @@
 zebra_api.py — Microservicio FastAPI para generación de propuestas Zebra.
 
 Endpoints:
-  - GET  /health           → healthcheck
-  - POST /generate         → recibe proposal_data, devuelve DOCX
-  - POST /generate-excel   → recibe proposal_data con calculadora_inputs, devuelve XLSX anexo
+  - GET  /health               → healthcheck
+  - POST /generate             → recibe proposal_data, devuelve DOCX
+  - POST /generate-excel       → recibe proposal_data con calculadora_inputs, devuelve XLSX anexo
+  - POST /generate-evaluation  → recibe evaluation_data, devuelve PDF de diagnóstico comercial
 
 Autenticación: header X-API-Key debe coincidir con env var ZEBRA_API_KEY.
 
@@ -18,6 +19,7 @@ Lógica de la calculadora:
 import logging
 import os
 import re
+import tempfile
 import unicodedata
 import uuid
 from dataclasses import asdict, is_dataclass
@@ -26,6 +28,7 @@ from typing import Any, Dict, Optional
 
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
+from starlette.background import BackgroundTask
 
 from zebra_proposal_builder import generate_proposal
 from zebra_investment_calc import (
@@ -35,15 +38,20 @@ from zebra_investment_calc import (
     calcular_plan_12_meses,
 )
 from zebra_excel_annex import generate_investment_excel
+from zebra_evaluation_builder import generate_evaluation_pdf
 
 
 # =============================================================================
 # CONFIG
 # =============================================================================
 
-API_VERSION = "2.0.0"
+API_VERSION = "2.1.0"
 OUTPUT_DIR = Path(os.environ.get("ZEBRA_OUTPUT_DIR", "/tmp/zebra"))
 API_KEY = os.environ.get("ZEBRA_API_KEY")
+
+# Logo blanco para portada de PDFs de evaluación; None si no está presente en el contenedor.
+_LOGO_WHITE_PATH = Path(__file__).parent / "zebra_logo_white.png"
+EVALUATION_LOGO_PATH: str | None = str(_LOGO_WHITE_PATH) if _LOGO_WHITE_PATH.exists() else None
 
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -269,6 +277,51 @@ async def generate_excel(request: Request, x_api_key: Optional[str] = Header(Non
         path=str(output_path),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         filename=filename,
+    )
+
+
+@app.post("/generate-evaluation")
+async def generate_evaluation(request: Request, x_api_key: Optional[str] = Header(None)):
+    """
+    Genera el PDF de evaluación de diagnóstico comercial.
+
+    Body: evaluation_data (ver schema del prompt evaluador v2.3).
+    Requiere las claves `metadata` y `score_total` como mínimo.
+    """
+    _check_auth(x_api_key)
+
+    try:
+        body = await request.json()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Body no es JSON válido: {e}")
+
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="Body debe ser un objeto JSON.")
+
+    tmp_fd, tmp_path = tempfile.mkstemp(suffix=".pdf")
+    os.close(tmp_fd)
+
+    try:
+        generate_evaluation_pdf(body, tmp_path, logo_path=EVALUATION_LOGO_PATH)
+        log.info("PDF evaluación generado: %s", tmp_path)
+    except ValueError as e:
+        os.unlink(tmp_path)
+        return JSONResponse(status_code=400, content={"error": str(e)})
+    except Exception as e:
+        os.unlink(tmp_path)
+        log.exception("Error generando PDF evaluación")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+    slug = _slugify(
+        body.get("metadata", {}).get("cliente_prospecto") or "evaluacion"
+    )
+    filename = f"evaluacion_{slug}_{uuid.uuid4().hex[:8]}.pdf"
+
+    return FileResponse(
+        path=tmp_path,
+        media_type="application/pdf",
+        filename=filename,
+        background=BackgroundTask(os.unlink, tmp_path),
     )
 
 
