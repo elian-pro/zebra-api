@@ -17,7 +17,7 @@ Uso básico:
 
 Input esperado:
     evaluation_data debe ser el dict producido por el prompt evaluador v2.3
-    (Formato 2 — JSON estructurado). Ver README_EVALUATION_BUILDER.md
+    (Formato 2, JSON estructurado). Ver README_EVALUATION_BUILDER.md
     para el schema completo.
 
 Dependencias:
@@ -38,19 +38,21 @@ from pathlib import Path
 from typing import Any
 from weasyprint import HTML, CSS
 
+_DEFAULT_LOGO = Path(__file__).parent / "zebra_logo_white.png"
+
 
 # ============================================================
 # UTILIDADES
 # ============================================================
 
-def _safe(value: Any, default: str = "—") -> str:
+def _safe(value: Any, default: str = "N/D") -> str:
     """Devuelve el valor como string, o un default si es None/vacío."""
     if value is None or value == "" or value == []:
         return default
     return str(value)
 
 
-def _bool_to_es(value: Any, default: str = "—") -> str:
+def _bool_to_es(value: Any, default: str = "N/D") -> str:
     """Convierte boolean a 'Sí' / 'No' en español."""
     if value is True:
         return "Sí"
@@ -59,14 +61,18 @@ def _bool_to_es(value: Any, default: str = "—") -> str:
     return default
 
 
-def _logo_to_base64(logo_path: str | None) -> str:
+def _logo_to_base64(logo_path: str | Path | None) -> str:
     """Convierte el logo a base64 para embeberlo en el HTML."""
-    if not logo_path or not Path(logo_path).exists():
+    if not logo_path:
         return ""
-    with open(logo_path, "rb") as f:
+    path = Path(logo_path)
+    if not path.is_absolute():
+        path = Path(__file__).parent / path
+    if not path.exists():
+        return ""
+    with open(path, "rb") as f:
         encoded = base64.b64encode(f.read()).decode("utf-8")
-    # Detectar tipo de imagen (jpg/png)
-    ext = Path(logo_path).suffix.lower().lstrip(".")
+    ext = path.suffix.lower().lstrip(".")
     if ext == "jpg":
         ext = "jpeg"
     return f"data:image/{ext};base64,{encoded}"
@@ -97,7 +103,7 @@ def _status_label(status: str) -> str:
         "insuficiente_evidencia": "Insuficiente",
         "insuficiente": "Insuficiente",
     }
-    return mapping.get((status or "").lower(), status or "—")
+    return mapping.get((status or "").lower(), status or "N/D")
 
 
 def _verdict_from_score(score: int) -> tuple[str, str]:
@@ -112,7 +118,7 @@ def _verdict_from_score(score: int) -> tuple[str, str]:
 
 
 # ============================================================
-# CSS — Estilo Zebra
+# CSS: Estilo Zebra
 # ============================================================
 
 CSS_STYLES = """
@@ -120,7 +126,7 @@ CSS_STYLES = """
     size: letter;
     margin: 1.6cm 1.4cm 1.8cm 1.4cm;
     @bottom-left {
-        content: "Zebra · Evaluación de Diagnóstico — " string(client-name);
+        content: "Zebra · Evaluación de Diagnóstico: " string(client-name);
         font-family: 'Helvetica', sans-serif;
         font-size: 8pt;
         color: #888;
@@ -157,11 +163,15 @@ h1.cover-title { string-set: client-name content(); }
 .cover {
     background: #0a0a0a;
     color: #fff;
+    min-height: 100vh;
     height: 100vh;
     width: 100%;
     padding: 3cm 2.5cm 2cm 2.5cm;
     page-break-after: always;
-    position: relative;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .cover-logo {
@@ -268,7 +278,7 @@ table.cover-meta td {
     font-size: 9pt;
     border-top: 1px solid #333;
     padding-top: 0.5cm;
-    margin-top: 1.5cm;
+    margin-top: auto;
     clear: both;
 }
 
@@ -844,8 +854,17 @@ def _render_cover(data: dict, logo_b64: str) -> str:
         if logo_b64 else ""
     )
 
+    _VEREDICTO_MAX = 280
     if data.get("notas_estructurales"):
-        veredicto_op = data["notas_estructurales"]
+        raw = data["notas_estructurales"]
+        if len(raw) > _VEREDICTO_MAX:
+            cut = raw[:_VEREDICTO_MAX]
+            last_period = cut.rfind(".")
+            last_space = cut.rfind(" ")
+            split_at = last_period if last_period > _VEREDICTO_MAX - 60 else last_space
+            veredicto_op = cut[:split_at].rstrip() + "..."
+        else:
+            veredicto_op = raw
     elif score < 60:
         veredicto_op = (
             "NO COTIZAR. La llamada no produjo información suficiente. "
@@ -933,17 +952,17 @@ def _render_scoring(data: dict) -> str:
     </thead>
     <tbody>
         <tr>
-            <td><strong>A</strong> — Cobertura SPIN Zebra</td>
+            <td><strong>A</strong>: Cobertura SPIN Zebra</td>
             <td class="numeric">{a.get("total", 0)}</td>
             <td class="numeric">{a.get("max", 30)}</td>
         </tr>
         <tr>
-            <td><strong>B</strong> — Calidad de aplicación SPIN</td>
+            <td><strong>B</strong>: Calidad de aplicación SPIN</td>
             <td class="numeric">{b.get("total", 0)}</td>
             <td class="numeric">{b.get("max", 30)}</td>
         </tr>
         <tr>
-            <td><strong>C</strong> — Capacidad diagnóstica Zebra</td>
+            <td><strong>C</strong>: Capacidad diagnóstica Zebra</td>
             <td class="numeric">{c.get("total", 0)}</td>
             <td class="numeric">{c.get("max", 40)}</td>
         </tr>
@@ -968,11 +987,11 @@ def _render_eje_a_breakdown(a: dict) -> str:
     a3 = a.get("A3_checklist_salida", {})
 
     sec_names = {
-        "S1_contexto_negocio": "Sección 1 — Contexto y negocio",
-        "S2_oferta_mercado": "Sección 2 — Oferta y mercado",
-        "S3_operacion_comercial": "Sección 3 — Operación comercial",
-        "S4_diagnostico_eliminacion": "Sección 4 — Diagnóstico por eliminación",
-        "S5_capacidad_expectativas": "Sección 5 — Capacidad y expectativas",
+        "S1_contexto_negocio": "Sección 1: Contexto y negocio",
+        "S2_oferta_mercado": "Sección 2: Oferta y mercado",
+        "S3_operacion_comercial": "Sección 3: Operación comercial",
+        "S4_diagnostico_eliminacion": "Sección 4: Diagnóstico por eliminación",
+        "S5_capacidad_expectativas": "Sección 5: Capacidad y expectativas",
     }
 
     rows = ""
@@ -990,7 +1009,7 @@ def _render_eje_a_breakdown(a: dict) -> str:
         a3_text += f" Faltantes: <strong>{', '.join(items_falt)}</strong>."
 
     return f"""
-<h3>Eje A — Cobertura SPIN Zebra ({a.get("total", 0)}/{a.get("max", 30)})</h3>
+<h3>Eje A: Cobertura SPIN Zebra ({a.get("total", 0)}/{a.get("max", 30)})</h3>
 
 <div class="breakdown">
     <div class="breakdown-title">A.1 Tronco común ({a1.get("total", 0)}/{a1.get("max", 15)})</div>
@@ -1026,7 +1045,7 @@ def _render_eje_b_breakdown(b: dict) -> str:
         """
 
     return f"""
-<h3>Eje B — Calidad de aplicación SPIN ({b.get("total", 0)}/{b.get("max", 30)})</h3>
+<h3>Eje B: Calidad de aplicación SPIN ({b.get("total", 0)}/{b.get("max", 30)})</h3>
 <div class="breakdown">
     <table class="breakdown-table">{rows}</table>
 </div>
@@ -1050,7 +1069,7 @@ def _render_eje_c_breakdown(c: dict) -> str:
         """
 
     return f"""
-<h3>Eje C — Capacidad diagnóstica Zebra ({c.get("total", 0)}/{c.get("max", 40)})</h3>
+<h3>Eje C: Capacidad diagnóstica Zebra ({c.get("total", 0)}/{c.get("max", 40)})</h3>
 <div class="breakdown">
     <table class="breakdown-table">{rows}</table>
 </div>
@@ -1127,7 +1146,7 @@ def _render_data_card(data: dict) -> str:
 
     def row(k: str, v: Any) -> str:
         val_str = _safe(v)
-        cls = "val missing" if val_str in ("—", "FALTA", "Pendiente", "PENDIENTE") else "val"
+        cls = "val missing" if val_str in ("N/D", "FALTA", "Pendiente", "PENDIENTE") else "val"
         # Si el valor original es None/vacío, mostrar como FALTA
         if v is None or v == "":
             return f'<tr><td class="key">{k}</td><td class="val missing">FALTA</td></tr>'
@@ -1299,14 +1318,14 @@ def _render_auditorias(data: dict) -> str:
     operativas = data.get("auditoria_5_preguntas_operativas", {}) or {}
 
     maestras_labels = {
-        "P1_velocidad_vs_comprension": "P1 — ¿Velocidad o comprensión?",
-        "P2_equipo_puede_leads_imperfectos": "P2 — ¿Equipo puede trabajar leads imperfectos?",
-        "P3_volumen_vs_precision": "P3 — ¿Volumen o precisión?",
-        "P4_confianza_previa_determina_compra": "P4 — ¿Confianza previa determina la compra?",
-        "P5_ticket_soporta_friccion": "P5 — ¿Ticket soporta o exige fricción?",
-        "P6_duda_conversando_o_explicando": "P6 — ¿La duda se resuelve conversando o explicando?",
-        "P7_mercado_commoditizado": "P7 — ¿Mercado commoditizado?",
-        "P8_cuello_de_botella_real": "P8 — ¿Cuello de botella real?",
+        "P1_velocidad_vs_comprension": "P1: ¿Velocidad o comprensión?",
+        "P2_equipo_puede_leads_imperfectos": "P2: ¿Equipo puede trabajar leads imperfectos?",
+        "P3_volumen_vs_precision": "P3: ¿Volumen o precisión?",
+        "P4_confianza_previa_determina_compra": "P4: ¿Confianza previa determina la compra?",
+        "P5_ticket_soporta_friccion": "P5: ¿Ticket soporta o exige fricción?",
+        "P6_duda_conversando_o_explicando": "P6: ¿La duda se resuelve conversando o explicando?",
+        "P7_mercado_commoditizado": "P7: ¿Mercado commoditizado?",
+        "P8_cuello_de_botella_real": "P8: ¿Cuello de botella real?",
     }
     maestras_rows = ""
     for key, label in maestras_labels.items():
@@ -1316,10 +1335,10 @@ def _render_auditorias(data: dict) -> str:
         """
 
     ejes_labels = {
-        "E1_velocidad_vs_profundidad": "E1 — Velocidad vs profundidad",
-        "E2_volumen_vs_intencion": "E2 — Volumen vs intención",
-        "E3_capacidad_comercial_vs_dependencia_marketing": "E3 — Capacidad comercial vs dependencia marketing",
-        "E4_confianza_inmediata_vs_construida": "E4 — Confianza inmediata vs construida",
+        "E1_velocidad_vs_profundidad": "E1: Velocidad vs profundidad",
+        "E2_volumen_vs_intencion": "E2: Volumen vs intención",
+        "E3_capacidad_comercial_vs_dependencia_marketing": "E3: Capacidad comercial vs dependencia marketing",
+        "E4_confianza_inmediata_vs_construida": "E4: Confianza inmediata vs construida",
     }
     ejes_rows = ""
     for key, label in ejes_labels.items():
@@ -1332,11 +1351,11 @@ def _render_auditorias(data: dict) -> str:
         """
 
     operativas_labels = {
-        "PO1_tipo_de_atencion": "PO1 — ¿Qué tipo de atención captura el negocio?",
-        "PO2_que_vuelve_atencion_oportunidad": "PO2 — ¿Qué necesita pasar para volver atención en oportunidad?",
-        "PO3_friccion_que_ayuda_o_estorba": "PO3 — ¿Qué fricción ayuda y cuál estorba?",
-        "PO4_rol_de_ventas": "PO4 — ¿Qué rol juega ventas?",
-        "PO5_que_debe_ocurrir_antes_del_contacto": "PO5 — ¿Qué debe ocurrir antes del contacto?",
+        "PO1_tipo_de_atencion": "PO1: ¿Qué tipo de atención captura el negocio?",
+        "PO2_que_vuelve_atencion_oportunidad": "PO2: ¿Qué necesita pasar para volver atención en oportunidad?",
+        "PO3_friccion_que_ayuda_o_estorba": "PO3: ¿Qué fricción ayuda y cuál estorba?",
+        "PO4_rol_de_ventas": "PO4: ¿Qué rol juega ventas?",
+        "PO5_que_debe_ocurrir_antes_del_contacto": "PO5: ¿Qué debe ocurrir antes del contacto?",
     }
     op_rows = ""
     for key, label in operativas_labels.items():
@@ -1533,7 +1552,7 @@ def _render_suficiencia(data: dict) -> str:
             "seguimiento": "Seguimiento",
             "cierre": "Cierre",
             "insuficiente_evidencia": "Insuficiente evidencia",
-        }.get((val or "").lower(), val or "—")
+        }.get((val or "").lower(), val or "N/D")
 
     cuello = suf.get("cuello_de_botella_detectado", "insuficiente_evidencia")
     audito = suf.get("diagnosticador_audito_la_version", "acepto_sin_verificar")
@@ -1615,7 +1634,7 @@ def _render_plan_mejora(data: dict) -> str:
         items += f"""
 <table class="plan-item">
     <tr>
-        <td class="priority-col">{p.get("prioridad", "—")}</td>
+        <td class="priority-col">{p.get("prioridad", "N/D")}</td>
         <td class="content-col">
             <div class="plan-action">{_safe(p.get("accion"))}</div>
             <div class="plan-just">{_safe(p.get("justificacion"))}</div>
@@ -1645,7 +1664,7 @@ def _render_cierre(data: dict) -> str:
             "fueron sobresalientes. Esta llamada sirve como caso de calibración para futuras evaluaciones."
         )
     elif score >= 75:
-        titulo = "Cotización sólida — diagnóstico cumplido."
+        titulo = "Cotización sólida: diagnóstico cumplido."
         cuerpo = (
             "La información capturada es suficiente para que el cotizador decida modelo con criterio. "
             "Hay áreas de mejora marcadas en el plan, pero no comprometen la cotización."
@@ -1685,17 +1704,17 @@ def _render_cierre(data: dict) -> str:
 def generate_evaluation_pdf(
     evaluation_data: dict,
     output_path: str,
-    logo_path: str | None = None,
+    logo_path: str | Path | None = _DEFAULT_LOGO,
 ) -> str:
     """
     Genera un PDF de evaluación de diagnóstico comercial Zebra.
 
     Args:
-        evaluation_data: dict con el JSON producido por el prompt evaluador v2.2
-                         (Formato 2 — JSON estructurado). Ver README para schema.
+        evaluation_data: dict con el JSON producido por el prompt evaluador v2.3
+                         (Formato 2, JSON estructurado). Ver README para schema.
         output_path: ruta donde guardar el PDF (ej. "evaluacion_cliente.pdf")
-        logo_path: ruta opcional al logo Zebra blanco (PNG/JPG).
-                   Si no se provee, la portada va sin logo.
+        logo_path: ruta al logo Zebra blanco (PNG/JPG). Por defecto usa
+                   zebra_logo_white.png junto al módulo; se omite si no existe.
 
     Returns:
         La ruta del archivo generado.
@@ -1712,13 +1731,13 @@ def generate_evaluation_pdf(
     if "score_total" not in evaluation_data:
         raise ValueError("evaluation_data['score_total'] es requerido")
 
-    logo_b64 = _logo_to_base64(logo_path) if logo_path else ""
+    logo_b64 = _logo_to_base64(logo_path)
 
     html_content = f"""<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Evaluación de Diagnóstico — {_safe(evaluation_data['metadata'].get('cliente_prospecto'))}</title>
+    <title>Evaluación de Diagnóstico: {_safe(evaluation_data['metadata'].get('cliente_prospecto'))}</title>
 </head>
 <body>
 {_render_cover(evaluation_data, logo_b64)}
