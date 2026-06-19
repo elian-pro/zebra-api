@@ -62,7 +62,7 @@
       "cita_cliente": "Si pudiera yo arreglar algo en el proceso comercial... lo que no hemos terminado de amarrar es cómo nos ve la gente. O sea te diría qué me gustaría, expandirnos más hacia otros estados que no lo hemos hecho.",
       "accion_diagnosticador": "Aceptó la respuesta y pasó a la siguiente pregunta ('Okay, bien. Ya estamos terminando...').",
       "pregunta_que_faltaba": "Espera, dijiste dos cosas diferentes: 'cómo nos ve la gente' y 'expandirnos a otros estados'. Esas son dos prioridades distintas. ¿Cuál es la real?",
-      "impacto_en_cotizacion": "Es la pregunta más diagnóstica del SPIN (Sección 5.3). Otto entregó dos hipótesis de cuello de botella distintas — percepción (señal Authority) vs alcance geográfico (señal Tráfico/Adquisición). Sin desambiguar, el cotizador no puede decidir."
+      "impacto_en_cotizacion": "Es la pregunta más diagnóstica del SPIN (Sección 5.3). Otto entregó dos hipótesis de cuello de botella distintas: percepción (señal Authority) vs alcance geográfico (señal Tráfico/Adquisición). Sin desambiguar, el cotizador no puede decidir."
     },
     {
       "cita_cliente": "Ver si ustedes mismos nos pueden ayudar con el refresh de la página de internet o es algo que tenemos que cotizar aparte y tener todo listo para poder salir en las campañas de Google Ads.",
@@ -73,8 +73,8 @@
     {
       "cita_cliente": "Mi costo por lead aproximado puede rondar los 100 pesos aproximadamente.",
       "accion_diagnosticador": "100 pesos. Okay. ¿Cuál canal te trae mejores clientes?",
-      "pregunta_que_faltaba": "¿$100 MXN por lead? Eso es bajísimo para real estate en Mérida. ¿Es un dato verificado del administrador de pauta o una estimación? ¿Y qué consideras 'lead' — alguien que llenó form, escribió por WhatsApp, dio clic?",
-      "impacto_en_cotizacion": "Si el CPL real es $100, el cuello de botella NO es adquisición — es calificación o conversión. Si es estimación errada y el CPL real es mayor, cambia la conversación de inversión."
+      "pregunta_que_faltaba": "¿$100 MXN por lead? Eso es bajísimo para real estate en Mérida. ¿Es un dato verificado del administrador de pauta o una estimación? ¿Y qué consideras 'lead': alguien que llenó form, escribió por WhatsApp, dio clic?",
+      "impacto_en_cotizacion": "Si el CPL real es $100, el cuello de botella NO es adquisición, es calificación o conversión. Si es estimación errada y el CPL real es mayor, cambia la conversación de inversión."
     },
     {
       "cita_cliente": "De los leads que llegan, qué porcentaje son realmente compradores potenciales reales... Como un 30%, uno de cada tres leads.",
@@ -102,7 +102,7 @@
     }
   ],
   "fortalezas_observadas": [
-    "Cobertura amplia del tronco común y módulo Real Estate. Atravesó las cinco secciones del SPIN y la mayoría del módulo de industria. La cobertura de superficie está OK — el problema es la profundidad, no la amplitud.",
+    "Cobertura amplia del tronco común y módulo Real Estate. Atravesó las cinco secciones del SPIN y la mayoría del módulo de industria. La cobertura de superficie está OK: el problema es la profundidad, no la amplitud.",
     "Captura limpia de la cascada de conversión con números. Obtuvo 50 leads/mes → 15% agenda → mayoría asiste → 13% apartado sobre asistencia → ~100% cierre. Es la base más sólida del diagnóstico y le da al cotizador una imagen clara del embudo cuantitativo.",
     "Captura del presupuesto explícito y disposición de cambio. Otto declaró $25-30K mensual, capacidad de iniciar la próxima semana y apertura a modificar proceso. Información ejecutable para Inversión y Plan de Implementación.",
     "Identificación de ausencia de contenido institucional. Aunque no la conectó con el resto, sí capturó textualmente que no hay videos del director, testimonios ni prensa. Input directo para Piezas de Contenido si el modelo final incluye Authority."
@@ -228,11 +228,11 @@
       {"dato_faltante": "Tasa de cierre por asesor", "por_que_impide_decidir": "Diferencia entre problema individual vs problema sistémico del equipo."},
       {"dato_faltante": "Uso real de sala de ventas en sitio + estructura de comisiones con brokers", "por_que_impide_decidir": "Define si los canales actuales se mantienen, se reemplazan o se complementan."}
     ],
-    "nota_para_cotizador": "Otto pidió explícitamente que la propuesta incluya rediseño de página web — confirmado por Gema. Validar si entra en setup o como módulo. La sala de ventas en sitio (terminada con casa club en septiembre) es un activo de Authority natural que no se exploró pero que cambia el sistema. El cliente está caliente, abierto al cambio y con presupuesto disponible — vale el follow-up para llenar gaps antes de cotizar."
+    "nota_para_cotizador": "Otto pidió explícitamente que la propuesta incluya rediseño de página web (confirmado por Gema). Validar si entra en setup o como módulo. La sala de ventas en sitio (terminada con casa club en septiembre) es un activo de Authority natural que no se exploró pero que cambia el sistema. El cliente está caliente, abierto al cambio y con presupuesto disponible: vale el follow-up para llenar gaps antes de cotizar."
   },
   "plan_de_mejora": [
     {"prioridad": 1, "accion": "Reframear desde el minuto cero cuando el cliente abre con tácticas ('necesitamos página + Google Ads').", "justificacion": "Aceptar la narrativa del cliente desde el inicio condicionó toda la llamada al Error Estructural #1. Es un patrón que va a repetirse con cada prospecto que llegue ya con hipótesis."},
-    {"prioridad": 2, "accion": "Aterrizar la pregunta de prioridad (Sección 5.3 del SPIN). No aceptar dos respuestas — pedir que elija.", "justificacion": "Otto dio dos prioridades distintas y Gema no desambiguó. Es la pregunta más diagnóstica del SPIN."},
+    {"prioridad": 2, "accion": "Aterrizar la pregunta de prioridad (Sección 5.3 del SPIN). No aceptar dos respuestas: pedir que elija.", "justificacion": "Otto dio dos prioridades distintas y Gema no desambiguó. Es la pregunta más diagnóstica del SPIN."},
     {"prioridad": 3, "accion": "Activar el músculo de preguntas de implicación (B.3). Por cada problema verbalizado, pregunta automática de cuantificación de costo.", "justificacion": "Sin preguntas de implicación, el cliente nunca verbaliza urgencia y la propuesta tendrá problemas de cierre."},
     {"prioridad": 4, "accion": "Auditar números sospechosos antes de aceptarlos (CPL $100, % por canal estimados, tasa de cierre).", "justificacion": "Aceptar números sin auditar contamina la cotización con supuestos falsos."},
     {"prioridad": 5, "accion": "Practicar el test Authority vs High Intent cuando aparezca evidencia de ambos.", "justificacion": "Cordelia es un caso clásico que lo requería y se evaluó a ciegas."},
