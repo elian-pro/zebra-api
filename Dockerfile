@@ -33,8 +33,8 @@ RUN python -c "import fastapi, uvicorn, docx, openpyxl, weasyprint; \
     print('python-docx', docx.__version__); \
     print('weasyprint', weasyprint.__version__)"
 
-# Copiar módulos Python y assets de imagen (incluye zebra_logo_white.png si está en el repo)
-COPY *.py *.png ./
+# Copiar módulos Python, assets de imagen y archivos de ejemplo
+COPY *.py *.png *.json ./
 
 ENV ZEBRA_OUTPUT_DIR=/tmp/zebra
 RUN mkdir -p /tmp/zebra
