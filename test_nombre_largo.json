@@ -1,0 +1,387 @@
+{
+  "metadata": {
+    "cliente_prospecto": "Godson / Rodríguez Arquitectos (Erick Martin Luna Rodriguez y Roberto Celaya Arvizu)",
+    "diagnosticador": "Gema",
+    "industria_detectada": "otra",
+    "industria_especifica_si_otra": "Despacho de arquitectura / servicios profesionales B2B/B2C — diseño y ejecución de obra para oficinas, locales comerciales y casa habitación",
+    "duracion_aproximada_min": 70,
+    "fecha_evaluacion": "2026-06-15"
+  },
+  "score_total": 53,
+  "veredicto": "no_cotizar",
+  "scores_por_eje": {
+    "A_cobertura_SPIN": {
+      "total": 23,
+      "max": 30,
+      "A1_tronco_comun": {
+        "total": 11,
+        "max": 15,
+        "secciones": {
+          "S1_contexto_negocio": {
+            "puntos": 2,
+            "max": 3,
+            "comentario": "Cubrió ticket, fuentes, modelo, inventario, meta vs realidad. Faltó precisión en disponibles activas que Otto admitió no tener."
+          },
+          "S2_oferta_mercado": {
+            "puntos": 2,
+            "max": 3,
+            "comentario": "Aceptó 'metros y precio' sin auditar la narrativa diferenciadora; el pitch de 30 segundos salió pobre y no se reformuló."
+          },
+          "S3_operacion_comercial": {
+            "puntos": 2,
+            "max": 3,
+            "comentario": "Cubrió cascada con números y operación interna. Faltó verificar CPL ($100) y tasa de cierre por asesor."
+          },
+          "S4_diagnostico_eliminacion": {
+            "puntos": 2,
+            "max": 3,
+            "comentario": "Hizo las tres preguntas pero no integró respuestas en una conclusión de cuello de botella."
+          },
+          "S5_capacidad_expectativas": {
+            "puntos": 3,
+            "max": 3,
+            "comentario": "Cubrió ejecutor, presupuesto, plazos y éxito. La falla de la pregunta 5.3 (priorización) se evalúa en C.3."
+          }
+        }
+      },
+      "A2_modulo_industria": {
+        "puntos": 7,
+        "max": 9,
+        "comentario": "Buena cobertura general de Real Estate. Faltó profundizar estructura de comisiones con brokers, uso real de sala de ventas en sitio, y triangulación entre ausencia de contenido institucional + narrativa débil + preocupación de percepción."
+      },
+      "A3_checklist_salida": {
+        "puntos": 5,
+        "max": 6,
+        "items_obtenidos": [
+          "unidades_totales",
+          "ticket_promedio_con_rango",
+          "unidades_por_operacion",
+          "absorcion_objetivo",
+          "sala_de_ventas",
+          "tipo_operacion",
+          "etapa_proyecto"
+        ],
+        "items_faltantes": [
+          "disponibles_activas_exacto"
+        ]
+      }
+    },
+    "B_calidad_SPIN": {
+      "total": 16,
+      "max": 30,
+      "subdimensiones": {
+        "B1_situacion": {
+          "puntos": 4,
+          "max": 5,
+          "comentario": "Eficiente sin eternizarse."
+        },
+        "B2_problema": {
+          "puntos": 5,
+          "max": 10,
+          "comentario": "Identificó síntomas (sin CRM, sin script) pero no los conectó con problemas verbalizados por Otto. Aceptó la versión del cliente sin contrastar."
+        },
+        "B3_implicacion": {
+          "puntos": 3,
+          "max": 10,
+          "comentario": "Casi sin preguntas de implicación. No cuantificó costo de leads perdidos, no hizo verbalizar gravedad, no exploró costo de oportunidad. Va a generar problemas de cierre por falta de urgencia narrativa."
+        },
+        "B4_necesidad_beneficio": {
+          "puntos": 4,
+          "max": 5,
+          "comentario": "Capturó definición de éxito pero sin cuantificar valor económico."
+        }
+      }
+    },
+    "C_capacidad_diagnostica": {
+      "total": 14,
+      "max": 40,
+      "subdimensiones": {
+        "C1_jalar_hilos": {
+          "puntos": 3,
+          "max": 9,
+          "comentario": "Múltiples puertas abiertas no exploradas: pregunta de prioridad con dos respuestas, base dormida, plan constructor."
+        },
+        "C2_cuantificacion": {
+          "puntos": 4,
+          "max": 9,
+          "comentario": "Pidió números frecuentemente pero aceptó estimaciones sin auditar (CPL $100 sospechoso, % por canal estimado)."
+        },
+        "C3_cuello_botella_y_suficiencia_modelo": {
+          "puntos": 5,
+          "max": 14,
+          "comentario": "Aceptó la versión del cliente ('ventas directas es lo que falta') sin auditar. Evidencia apunta a múltiples cuellos simultáneos sin diagnóstico del dominante. Sumado a la falla de la pregunta 5.3 que no se aterrizó."
+        },
+        "C4_principios_y_errores": {
+          "puntos": 2,
+          "max": 8,
+          "comentario": "No detectó monetización imperfecta a pesar de evidencia textual altísima. No detectó fricción útil a pesar de evidencia clara. No hizo test Authority vs High Intent. Indujo Error #1, Error #3, Error #6 y Error #7."
+        }
+      }
+    }
+  },
+  "momentos_perdidos": [
+    {
+      "cita_cliente": "Si pudiera yo arreglar algo en el proceso comercial... lo que no hemos terminado de amarrar es cómo nos ve la gente. O sea te diría qué me gustaría, expandirnos más hacia otros estados que no lo hemos hecho.",
+      "accion_diagnosticador": "Aceptó la respuesta y pasó a la siguiente pregunta ('Okay, bien. Ya estamos terminando...').",
+      "pregunta_que_faltaba": "Espera, dijiste dos cosas diferentes: 'cómo nos ve la gente' y 'expandirnos a otros estados'. Esas son dos prioridades distintas. ¿Cuál es la real?",
+      "impacto_en_cotizacion": "Es la pregunta más diagnóstica del SPIN (Sección 5.3). Otto entregó dos hipótesis de cuello de botella distintas: percepción (señal Authority) vs alcance geográfico (señal Tráfico/Adquisición). Sin desambiguar, el cotizador no puede decidir."
+    },
+    {
+      "cita_cliente": "Ver si ustedes mismos nos pueden ayudar con el refresh de la página de internet o es algo que tenemos que cotizar aparte y tener todo listo para poder salir en las campañas de Google Ads.",
+      "accion_diagnosticador": "Respondió afirmando la lógica del cliente ('Bien, claro, pasa por todo un proceso...') y arrancó las preguntas SPIN sin reframear.",
+      "pregunta_que_faltaba": "Otto, antes de arrancar las preguntas: estás partiendo de la hipótesis de que el problema es la página y la pauta. ¿Qué te hace creer eso? Porque a veces el problema real está en otra parte y arreglar la página no mueve la aguja.",
+      "impacto_en_cotizacion": "Es el Error Estructural #1 del marco Zebra: empezar por canales y no por lógica. Al aceptar la narrativa de Otto desde el inicio, toda la llamada quedó sesgada hacia su solución preconcebida."
+    },
+    {
+      "cita_cliente": "Mi costo por lead aproximado puede rondar los 100 pesos aproximadamente.",
+      "accion_diagnosticador": "100 pesos. Okay. ¿Cuál canal te trae mejores clientes?",
+      "pregunta_que_faltaba": "¿$100 MXN por lead? Eso es bajísimo para real estate en Mérida. ¿Es un dato verificado del administrador de pauta o una estimación? ¿Y qué consideras 'lead': alguien que llenó form, escribió por WhatsApp, dio clic?",
+      "impacto_en_cotizacion": "Si el CPL real es $100, el cuello de botella NO es adquisición, es calificación o conversión. Si es estimación errada y el CPL real es mayor, cambia la conversación de inversión."
+    },
+    {
+      "cita_cliente": "De los leads que llegan, qué porcentaje son realmente compradores potenciales reales... Como un 30%, uno de cada tres leads.",
+      "accion_diagnosticador": "Okay. ¿Quién ejecutaría internamente este proyecto del lado del cliente?",
+      "pregunta_que_faltaba": "Entonces de 50 leads/mes, 35 son curiosos que tu equipo igual atiende. ¿Cuánto tiempo gasta tu equipo en esos 35? ¿Te has puesto a calcular cuánto cuesta atenderlos?",
+      "impacto_en_cotizacion": "Otto verbalizó evidencia textual de Fricción Útil necesaria. Era el momento exacto para profundizar en el costo de no filtrar. Gema cambió de tema."
+    },
+    {
+      "cita_cliente": "Los tenemos todos esos números de WhatsApp guardados pero no se hace nada de nuevo... hay clientes que tenemos desde enero que seguimos en pláticas con ellos.",
+      "accion_diagnosticador": "Aceptó la respuesta y siguió con 'automatización o manual'.",
+      "pregunta_que_faltaba": "¿Cuántos leads tienes guardados de los últimos 12 meses que no se convirtieron? Si el ticket es $2M y solo 10 de esos vuelven, son $20M de pipeline dormido. ¿Quién es responsable de tocar esa base?",
+      "impacto_en_cotizacion": "Principio textual de Monetización Imperfecta. El cliente literalmente describió valor no capturado. Gema no lo cuantificó ni lo profundizó."
+    },
+    {
+      "cita_cliente": "[Cliente mencionó en tres momentos distintos] No tenemos contenido institucional, se vende por metros y precio, cómo nos ve la gente.",
+      "accion_diagnosticador": "Capturó las tres respuestas pero nunca las conectó entre sí.",
+      "pregunta_que_faltaba": "Otto, dijiste tres cosas que se conectan: no tienen contenido institucional, se venden por metros y precio, y tu mayor preocupación es 'cómo nos ve la gente'. ¿Sientes que el mercado los percibe solo como 'otro proyecto más'?",
+      "impacto_en_cotizacion": "Esta triangulación habría llevado directamente al diagnóstico Authority. El cotizador recibirá tres datos sueltos sin la conexión que el cliente mismo entregó."
+    },
+    {
+      "cita_cliente": "Hubo un grupo que nos compró varios lotes... el plan constructor que te comentaba es como hemos estado vendiendo últimamente.",
+      "accion_diagnosticador": "No exploró el canal.",
+      "pregunta_que_faltaba": "¿Qué porcentaje de las ventas históricas viene del plan constructor vs otros canales? ¿Cuántos constructores únicos te han comprado? ¿Es repetible o fue una coyuntura?",
+      "impacto_en_cotizacion": "Si el 50% del pipeline depende de un canal B2B, eso cambia completamente el diseño del sistema. El cotizador no sabe si optimizar para B2C o duplicar el canal constructor."
+    }
+  ],
+  "fortalezas_observadas": [
+    "Cobertura amplia del tronco común y módulo Real Estate. Atravesó las cinco secciones del SPIN y la mayoría del módulo de industria. La cobertura de superficie está OK: el problema es la profundidad, no la amplitud.",
+    "Captura limpia de la cascada de conversión con números. Obtuvo 50 leads/mes → 15% agenda → mayoría asiste → 13% apartado sobre asistencia → ~100% cierre. Es la base más sólida del diagnóstico y le da al cotizador una imagen clara del embudo cuantitativo.",
+    "Captura del presupuesto explícito y disposición de cambio. Otto declaró $25-30K mensual, capacidad de iniciar la próxima semana y apertura a modificar proceso. Información ejecutable para Inversión y Plan de Implementación.",
+    "Identificación de ausencia de contenido institucional. Aunque no la conectó con el resto, sí capturó textualmente que no hay videos del director, testimonios ni prensa. Input directo para Piezas de Contenido si el modelo final incluye Authority."
+  ],
+  "data_card": {
+    "contexto": {
+      "tipo_negocio": "Comercializador inmobiliario (master broker)",
+      "ticket_promedio": "$2.1M MXN (rango $2.0M-$4.8M)",
+      "meta_mensual": "2 lotes/mes en ventas directas",
+      "realidad_actual": "1 lote/mes promedio",
+      "modelo_negocio": "margen",
+      "tiempo_operando": "Otto entró ene 2025; proyecto con 1.5 años en comercialización"
+    },
+    "adquisicion": {
+      "canales_actuales": [
+        "Inmobiliarias",
+        "Referidos",
+        "Instagram",
+        "Plan constructor"
+      ],
+      "porcentaje_por_canal": "50% referidos, 30% inmobiliarias, 20% redes",
+      "inversion_pauta_actual": "$10-15K MXN/mes",
+      "CPL_aproximado": "$100 MXN (no auditado)"
+    },
+    "funnel": {
+      "leads_mes": "40-50 (estimado, no medido)",
+      "porcentaje_agenda": "15%",
+      "porcentaje_asistencia": "~mayoría de los que agendan",
+      "porcentaje_cierre": "~100% sobre apartado; ~13% apartado sobre asistencia"
+    },
+    "equipo_comercial": {
+      "numero_asesores": "4",
+      "roles_diferenciados": false,
+      "tiene_script": false,
+      "CRM": null
+    },
+    "seguimiento": {
+      "numero_seguimientos": "4 (estimado)",
+      "duracion": "Variable, leads desde enero todavía en pláticas",
+      "tiene_reactivacion": false
+    },
+    "capacidad_implementacion": {
+      "ejecutor_interno_identificado": true,
+      "apertura_al_cambio": "alta",
+      "presupuesto": "disponible ($25-30K/mes)"
+    },
+    "expectativas": {
+      "plazo_30_dias": "Leads más calificados",
+      "plazo_90_dias": "Cerrar operaciones",
+      "definicion_exito": "Preventar todo antes de terminar construcción (dic 2027)"
+    },
+    "datos_industria": {
+      "real_estate": {
+        "unidades_totales": "164",
+        "disponibles_activas": null,
+        "unidades_por_operacion": "Hasta 2",
+        "absorcion_objetivo_meses": "12-24",
+        "etapa_proyecto": "30% avance, entrega dic 2027",
+        "cascada_conversion_completa": true
+      },
+      "restaurantes": null
+    }
+  },
+  "auditoria_8_preguntas_maestras": {
+    "P1_velocidad_vs_comprension": "inferible",
+    "P2_equipo_puede_leads_imperfectos": "respondida_con_evidencia",
+    "P3_volumen_vs_precision": "respondida_con_evidencia",
+    "P4_confianza_previa_determina_compra": "inferible",
+    "P5_ticket_soporta_friccion": "respondida_con_evidencia",
+    "P6_duda_conversando_o_explicando": "inferible",
+    "P7_mercado_commoditizado": "respondida_con_evidencia",
+    "P8_cuello_de_botella_real": "imposible"
+  },
+  "auditoria_4_ejes_estrategicos": {
+    "E1_velocidad_vs_profundidad": {
+      "estado": "ambigua",
+      "comentario": "respuesta rápida pero ciclo de 2 meses; no desambiguado"
+    },
+    "E2_volumen_vs_intencion": {
+      "estado": "posicion_clara",
+      "comentario": "Otto declaró preferir calificados"
+    },
+    "E3_capacidad_comercial_vs_dependencia_marketing": {
+      "estado": "ambigua",
+      "comentario": "debilidades operativas no confrontadas"
+    },
+    "E4_confianza_inmediata_vs_construida": {
+      "estado": "posicion_clara",
+      "comentario": "ticket alto + sin contenido + 'cómo nos ve la gente'"
+    }
+  },
+  "auditoria_5_preguntas_operativas": {
+    "PO1_tipo_de_atencion": "inferible",
+    "PO2_que_vuelve_atencion_oportunidad": "inferible",
+    "PO3_friccion_que_ayuda_o_estorba": "imposible",
+    "PO4_rol_de_ventas": "respondida",
+    "PO5_que_debe_ocurrir_antes_del_contacto": "imposible"
+  },
+  "deteccion_principios_zebra": {
+    "monetizacion_imperfecta": {
+      "evidencia_detectada": true,
+      "cita_textual": "Los tenemos todos esos números de WhatsApp guardados pero no se hace nada de nuevo... hay clientes que tenemos desde enero que seguimos en pláticas con ellos.",
+      "diagnosticador_profundizo": false,
+      "que_le_falto_preguntar": "cuantificar la base dormida en número de leads y valor potencial; identificar responsable de la reactivación; calcular costo de oportunidad de los leads no trabajados del último año."
+    },
+    "friccion_util": {
+      "evidencia_detectada": true,
+      "cita_textual": "De los leads que llegan, qué porcentaje son realmente compradores potenciales reales... Como un 30%... todos pasan iguales.",
+      "diagnosticador_profundizo": false,
+      "que_le_falto_preguntar": "costo de atender el 70% que no compra; qué pregunta podría agregarse al form para precalificar; qué información mínima necesitarían antes del contacto para no perder tiempo."
+    },
+    "diferenciacion_authority_vs_high_intent": {
+      "aplicaba_diferenciar": true,
+      "diagnosticador_hizo_test": false,
+      "comentario": "Cordelia es un caso clásico que requiere el test: real estate premium con problema declarado de percepción Y con problema de leads no calificados. Sin el test, el cotizador tiene que decidir entre 2-3 modelos sin la evidencia que la llamada debió capturar."
+    }
+  },
+  "deteccion_errores_estructurales": {
+    "E1_empezar_por_canales": {
+      "inducido_o_aceptado": true,
+      "cita": "Otto abrió pidiendo 'refresh de la página y campañas de Google Ads' y Gema no reframeó."
+    },
+    "E2_obsesion_con_CPL": {
+      "inducido_o_aceptado": false,
+      "cita": null
+    },
+    "E3_pedir_leads_perfectos_por_ventas_debiles": {
+      "inducido_o_aceptado": true,
+      "cita": "Otto pidió 'leads más calificados' mientras tiene equipo sin script, sin CRM, sin roles, sin reactivación; Gema no confrontó que el equipo comercial es parte del problema."
+    },
+    "E4_friccion_como_maquillaje": {
+      "inducido_o_aceptado": false,
+      "cita": null
+    },
+    "E5_branding_sin_captura": {
+      "inducido_o_aceptado": false,
+      "cita": null
+    },
+    "E6_homogeneidad_de_mercado": {
+      "inducido_o_aceptado": true,
+      "cita": "Otto mencionó clientes Campeche/Tabasco y querer expandirse, sin que Gema explorara si la lógica de venta sirve para ambos."
+    },
+    "E7_no_alinear_operacion_y_promesa": {
+      "inducido_o_aceptado": true,
+      "cita": "No se exploró si la operación actual (4 asesores manuales) puede sostener una promesa premium con preventa de ~100 unidades restantes."
+    }
+  },
+  "suficiencia_informacional": {
+    "version_del_cliente_sobre_su_problema": "Necesitamos vender directamente. El problema es la página y la pauta. Queremos leads más calificados y expandirnos a otros estados.",
+    "diagnosticador_audito_la_version": "acepto_sin_verificar",
+    "cuello_de_botella_detectado": "insuficiente_evidencia",
+    "evidencia_que_soporta_cuello": "La cascada muestra pérdida grande de lead → agenda (15%) y de agenda → apartado (13%) → apunta a calificación. Pero hay evidencia simultánea de seguimiento roto (sin reactivación), proceso comercial débil (sin CRM/script/roles) y problema de percepción ('cómo nos ve la gente'). No se diagnosticó el dominante.",
+    "suficiencia_modelo_dominante": "parcial",
+    "suficiencia_modelo_complementario": "no_aplica_todavia",
+    "informacion_a_perseguir_antes_de_cotizar": [
+      {
+        "dato_faltante": "Desambiguación de la pregunta de prioridad: percepción vs expansión geográfica",
+        "por_que_impide_decidir": "Define Authority vs Tráfico/Adquisición como dominante."
+      },
+      {
+        "dato_faltante": "Disponibles activas exactas y vendidos exactos",
+        "por_que_impide_decidir": "La calculadora de valor de proyecto no opera sin estos números."
+      },
+      {
+        "dato_faltante": "CPL verificado (¿dato real o estimación?)",
+        "por_que_impide_decidir": "Si CPL real es $100, descarta cuello de tráfico. Si es errado, cambia toda la conversación de inversión."
+      },
+      {
+        "dato_faltante": "% de pipeline histórico por canal con números verificados",
+        "por_que_impide_decidir": "Si plan constructor es 50%+, el sistema no debería diseñarse solo para B2C."
+      },
+      {
+        "dato_faltante": "Cuantificación de la base dormida (leads sin trabajar últimos 12 meses)",
+        "por_que_impide_decidir": "Define la prioridad relativa de Sales-First."
+      },
+      {
+        "dato_faltante": "Tasa de cierre por asesor",
+        "por_que_impide_decidir": "Diferencia entre problema individual vs problema sistémico del equipo."
+      },
+      {
+        "dato_faltante": "Uso real de sala de ventas en sitio + estructura de comisiones con brokers",
+        "por_que_impide_decidir": "Define si los canales actuales se mantienen, se reemplazan o se complementan."
+      }
+    ],
+    "nota_para_cotizador": "Otto pidió explícitamente que la propuesta incluya rediseño de página web (confirmado por Gema). Validar si entra en setup o como módulo. La sala de ventas en sitio (terminada con casa club en septiembre) es un activo de Authority natural que no se exploró pero que cambia el sistema. El cliente está caliente, abierto al cambio y con presupuesto disponible: vale el follow-up para llenar gaps antes de cotizar."
+  },
+  "plan_de_mejora": [
+    {
+      "prioridad": 1,
+      "accion": "Reframear desde el minuto cero cuando el cliente abre con tácticas ('necesitamos página + Google Ads').",
+      "justificacion": "Aceptar la narrativa del cliente desde el inicio condicionó toda la llamada al Error Estructural #1. Es un patrón que va a repetirse con cada prospecto que llegue ya con hipótesis."
+    },
+    {
+      "prioridad": 2,
+      "accion": "Aterrizar la pregunta de prioridad (Sección 5.3 del SPIN). No aceptar dos respuestas: pedir que elija.",
+      "justificacion": "Otto dio dos prioridades distintas y Gema no desambiguó. Es la pregunta más diagnóstica del SPIN."
+    },
+    {
+      "prioridad": 3,
+      "accion": "Activar el músculo de preguntas de implicación (B.3). Por cada problema verbalizado, pregunta automática de cuantificación de costo.",
+      "justificacion": "Sin preguntas de implicación, el cliente nunca verbaliza urgencia y la propuesta tendrá problemas de cierre."
+    },
+    {
+      "prioridad": 4,
+      "accion": "Auditar números sospechosos antes de aceptarlos (CPL $100, % por canal estimados, tasa de cierre).",
+      "justificacion": "Aceptar números sin auditar contamina la cotización con supuestos falsos."
+    },
+    {
+      "prioridad": 5,
+      "accion": "Practicar el test Authority vs High Intent cuando aparezca evidencia de ambos.",
+      "justificacion": "Cordelia es un caso clásico que lo requería y se evaluó a ciegas."
+    },
+    {
+      "prioridad": 6,
+      "accion": "Bajar el ratio venta-de-Zebra durante el diagnóstico.",
+      "justificacion": "Al menos 5 momentos donde Gema explicó qué hace Zebra en lugar de profundizar una pregunta diagnóstica. La venta sucede con Andrés en la siguiente reunión; esta llamada es diagnóstica."
+    }
+  ],
+  "notas_estructurales": null
+}
