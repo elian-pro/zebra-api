@@ -203,6 +203,10 @@ h1.cover-title { string-set: client-name content(); }
     color: #fff;
 }
 
+.cover-title--md { font-size: 34pt; }
+.cover-title--sm { font-size: 26pt; }
+.cover-title--xs { font-size: 20pt; }
+
 .cover-subtitle {
     font-size: 14pt;
     font-weight: 400;
@@ -884,12 +888,26 @@ def _render_cover(data: dict, logo_b64: str) -> str:
             "Usar como caso de calibración para futuras evaluaciones."
         )
 
+    _MAX_CLIENT_NAME = 100
+    client_name = _safe(meta.get("cliente_prospecto"))
+    if len(client_name) > _MAX_CLIENT_NAME:
+        client_name = client_name[:_MAX_CLIENT_NAME].rstrip() + "…"
+    name_len = len(client_name)
+    if name_len <= 30:
+        title_class = "cover-title"
+    elif name_len <= 50:
+        title_class = "cover-title cover-title--md"
+    elif name_len <= 70:
+        title_class = "cover-title cover-title--sm"
+    else:
+        title_class = "cover-title cover-title--xs"
+
     return f"""
 <div class="cover">
     {logo_html}
     <div class="cover-top">
         <div class="cover-eyebrow">Zebra · Evaluación de Diagnóstico Comercial</div>
-        <h1 class="cover-title">{_safe(meta.get("cliente_prospecto"))}</h1>
+        <h1 class="{title_class}">{client_name}</h1>
         <div class="cover-subtitle">Llamada diagnóstica con {_safe(meta.get("diagnosticador"), "el diagnosticador")}</div>
     </div>
 
